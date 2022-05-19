@@ -2,7 +2,6 @@ package knn
 
 import org.apache.log4j.{LogManager, Logger}
 import org.apache.spark.broadcast._
-import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{StringType, StructField}
@@ -17,9 +16,8 @@ object Algorithm {
      *
      */
 
-    var k = 2
-
-    var p = 0.01
+    var k = 0
+    var p = 0.0
 
     //Creando objeto logger necesario para almacenamiento de trazas de la aplicacion
     private final val mylogger: Logger = LogManager.getLogger("KnnwoOD")
