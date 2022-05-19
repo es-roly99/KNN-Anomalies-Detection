@@ -10,7 +10,7 @@ object Main {
 
         val spark = SparkSession
           .builder
-          .appName("Spark Pi")
+          .appName("Spark KNN")
           .config("spark.master", "local")
           .getOrCreate()
 
@@ -18,7 +18,7 @@ object Main {
         val k = 2
         val p = 0.01
 
-        val df_classified = Algorithm.train(df, spark, k, p)
+        val df_classified = Algorithm.train(df, spark, k, p, "label")
     }
 
 }

@@ -40,14 +40,14 @@ object Algorithm {
 
         println("Parseando tuplas")
         println("**********************************************")
-        println("                PARSEANDO TUPLAS")
+        println("              PARSEANDO TUPLAS")
         println("**********************************************")
         val ds = data.map { row => parseTupla(row, spark, ID) }
 
         println("Ejecutando Fase1")
 
         println("**********************************************")
-        println("                FASE1")
+        println("                    FASE1")
         println("**********************************************")
         val dsfase1 = ds.mapPartitions { x => fase1(x.toArray, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
         val filtro = (cantTupla * p).toInt
@@ -63,7 +63,7 @@ object Algorithm {
         println("Ejecutando Fase2")
 
         println("**********************************************")
-        println("                FASE2")
+        println("                    FASE2")
         println("**********************************************")
         val outlier = fase2(broadcast, dsfase1, spark).persist(StorageLevel.MEMORY_AND_DISK_SER)
         val bc = spark.sparkContext.broadcast(outlier.collect())
@@ -71,7 +71,7 @@ object Algorithm {
         println("Ejecutando Update")
 
         println("**********************************************")
-        println("                UPDATE")
+        println("                    UPDATE")
         println("**********************************************")
         val resultado = dsfase1.mapPartitions { iter => update(bc, iter.toArray, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
         val classData = clasificar(resultado, spark)
@@ -83,7 +83,6 @@ object Algorithm {
         ds.unpersist()
         println("Ejecutado algoritmo de deteccion de anomalias")
         classData
-
     }
 
     def clasificar(data: Dataset[Resultado], spark: SparkSession): Dataset[Clasificacion] = {
