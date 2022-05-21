@@ -9,18 +9,11 @@ import org.apache.spark.storage.StorageLevel
 
 object Algorithm {
 
-    /**
-     * Es la clase que contiene y gestiona las variables y funciones fundamentales para la aplicación del algoritmo KNNW_BigData
-     *
-     * @author Omar Torres Domínguez
-     *
-     */
-
     var k = 0
     var p = 0.0
 
     //Creando objeto logger necesario para almacenamiento de trazas de la aplicacion
-    private final val mylogger: Logger = LogManager.getLogger("KnnwoOD")
+    //private final val mylogger: Logger = LogManager.getLogger("KnnwoOD")
 
     /**
      * exce es la función que se encarga de ejecutar el algoritmo KNNW_BigData.
@@ -31,6 +24,7 @@ object Algorithm {
      * @param P     es un valor Double que representa el por ciento de instancias que de mayor índice de anomalías que se seleccionan para la segunda fase del algoritmo.
      * @return Retorna un Dataset que contiene el identificador único de las tuplas y su índice de anomalía correspondiente
      */
+
     def train(data: Dataset[Row], spark: SparkSession, K: Int, P: Double, ID: String = "ID"): Dataset[Clasificacion] = {
 
         k = K
@@ -473,7 +467,6 @@ object Algorithm {
      * @return Retorna una objeto de tipo Tupla
      */
     def parseTupla(row: Row, spark: SparkSession, ID: String = "ID"): Tupla = {
-
         var valores = Array[Double]()
         val id = row.getString(row.fieldIndex(ID))
         valores = row.toSeq.filter(_.toString != id).map(_.toString.toDouble).toArray
@@ -489,11 +482,9 @@ object Algorithm {
      */
     def parseTuplaBanco(row: Row, spark: SparkSession): TuplaBanco = {
 
-        val cant = row.size
-
-        var id = row.getString(2).toLong
-        var mes = row.getString(0).toInt
-        var importe = row.getString(1).toDouble
+        val id = row.getString(2).toLong
+        val mes = row.getString(0).toInt
+        val importe = row.getString(1).toDouble
         TuplaBanco(id, mes, importe)
 
     }
