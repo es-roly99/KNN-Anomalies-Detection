@@ -1,3 +1,8 @@
 target/
 **/.DS_Store
 ._.DS_Store
+.DS_Store
+/db/cover_id.csv
+/db/http_full_id.csv
+/db/shuttle_id.csv
+/db/smtp.csv
