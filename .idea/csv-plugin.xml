@@ -17,6 +17,69 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/db/shuttle_id.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/db/smtp.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/results/result.csv/part-00000-9870fe92-7bef-48f9-97c5-2155f94d0023-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/results/satimage_id/part-00000-65c39050-fc4b-4488-b4fd-8902a8f6bf8c-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/results/satimage_id/part-00000-91ed02ad-bca3-46e7-a9aa-e4e8071ff449-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/results/satimage_id/part-00000-9ec75505-1773-4acb-9fc3-ceafbb7dc1ba-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/results/satimage_id/part-00000-a21346ea-f76c-47af-974e-3cdcf488bdd7-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/results/satimage_id/part-00000-e3c770b8-4c63-4ee1-9bcb-3f761a01be12-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/results/satimage_id/part-00000-efe49ae5-57d3-4e0f-9ebe-d3202f561a36-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
