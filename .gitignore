@@ -6,4 +6,4 @@ target/
 /db/http_full_id.csv
 /db/shuttle_id.csv
 /db/smtp.csv
-/results/*
+/output/*

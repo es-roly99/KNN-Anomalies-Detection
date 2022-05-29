@@ -249,24 +249,22 @@ object Algorithm {
         var l = Array[Double]()
         if (a.length > 0 && b.length > 0) {
             l = a
-            for (i <- 0 until b.length)
+            for (i <- b.indices)
                 l = insert(b.apply(i), l, spark)
-
             l
         }
         else if (a.length > 0) {
             l = a
-
             l
         }
         else {
             l = b
-
             l
         }
     }
 
-    /** fase1 es una función que determina el indice de anomalía de una instancia en su partición. Inicialmente se obtiene las vecindades de las instancias en la partición en que se encuentran.
+    /** fase1 es una función que determina el indice de anomalía de una instancia en su partición. Inicialmente se obtiene las vecindades de las
+     *  instancias en la partición en que se encuentran.
      * Luego a paritr de esta vecindad local se determina el índice de anomalia de la instancia.
      *
      * @param lista es un arreglo de tipo Tupla que representa una partición de los datos
@@ -275,14 +273,14 @@ object Algorithm {
      */
     def fase1(lista: Array[Tupla], spark: SparkSession): Iterator[TuplaFase1] = {
 
-        var cant = 0
-        var tam = lista.length.toDouble
         val iter = lista.map { x =>
             var l = Array[Double]()
 
-            l = lista.aggregate(l)((v1, v2) => insert(distanceds(x.valores, v2.valores, spark), v1, spark), (p, set) => insertAll(p, set, spark))
+            l = lista.aggregate(l)(
+                (v1, v2) => insert(distanceds(x.valores, v2.valores, spark), v1, spark),
+                (p, set) => insertAll(p, set, spark)
+            )
 
-            cant = cant + 1
             TuplaFase1(x.id, x.valores, IA(l, spark))
         }
         iter.toIterator
