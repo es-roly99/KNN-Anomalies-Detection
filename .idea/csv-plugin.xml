@@ -31,6 +31,13 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/output/result/satimage_id/part-00000-cab697b2-c7a4-47e5-99f2-8149f6f91dba-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="/output/time/satimage_id/part-00000-f102ef43-4538-4a2d-a310-e2b72b7fed23-c000.csv">
           <value>
             <Attribute>

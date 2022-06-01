@@ -24,7 +24,7 @@ object Main {
         val p = 0.01
 
         val ini_time = System.nanoTime()
-        val df_classified = Algorithm.train(df, spark, k, p)
+        val df_classified = KNN.train(df, spark, k, p)
         val end_time = System.nanoTime()
 
         df_classified.withColumn("data", stringify(df_classified.col("data")))
