@@ -14,15 +14,14 @@ object KNN_Bank {
      * @param lista es un arreglo de tipo TuplaBanco que representa una partición de los datos
      * @return Retorna un iterador de tipo TuplaFase1Banco que representa la partición de los datos que recibió la función con el índice de anomalía agregado a cada instancia.
      */
-    def fase1Banco(lista: Array[TuplaBanco], spark: SparkSession): Iterator[TuplaFase1Banco] = {
+    def fase1Banco(lista: Array[TuplaBanco], k: Int, spark: SparkSession): Iterator[TuplaFase1Banco] = {
 
-        var size = lista.length.toDouble
         var por = 0.toDouble
         var mil = 1.toDouble
         val iter = lista.map { x =>
             var l = Array[Double]()
 
-            l = lista.aggregate(l)((v1, v2) => insert(distancedsBanco2(x, v2, spark), v1, spark), (p, set) => insertAll(p, set, spark))
+            l = lista.aggregate(l)((v1, v2) => insert(distancedsBanco2(x, v2, spark), v1, k, spark), (p, set) => insertAll(p, set, k, spark))
             por = por + 1.toDouble
             if ((por / 1000.toDouble) > mil) {
                 mil = mil + 1
@@ -45,19 +44,19 @@ object KNN_Bank {
      * @param rdd   es un Dataset de tipo TuplaFase1Banco que representa la base de datos asignada al KNNW_BigData
      * @return Retorna un Dataset de tipo TuplaFase1Banco. Este Dataset es el conjunto de datosseleccionados para la segunda fase con sus índices de anomalías ajustados.
      */
-    def fase2Banco(lista: Broadcast[Array[(TuplaFase1Banco)]], rdd: Dataset[TuplaFase1Banco], spark: SparkSession): Dataset[TuplaFase1Banco] = {
+    def fase2Banco(lista: Broadcast[Array[(TuplaFase1Banco)]], rdd: Dataset[TuplaFase1Banco], k:Int, spark: SparkSession): Dataset[TuplaFase1Banco] = {
 
         import spark.implicits._
 
         val result = rdd.mapPartitions { iterator =>
             val arr = iterator.toArray
-            var size = lista.value.length
+            val size = lista.value.length
             var por = 0.toDouble
             var mil = 1.toDouble
             val r = lista.value.map { x =>
 
-                var l = Array[Double]()
-                val iter = arr.aggregate(l)((v1, v2) => insert(distancedsBanco(x, v2, spark), v1, spark), (p, set) => insertAll(p, set, spark))
+                val l = Array[Double]()
+                val iter = arr.aggregate(l)((v1, v2) => insert(distancedsBanco(x, v2, spark), v1, k, spark), (p, set) => insertAll(p, set, k, spark))
                 por = por + 1
                 var last = 0
                 if (por / 1000.toDouble > mil) {
@@ -72,7 +71,7 @@ object KNN_Bank {
             }
             r.iterator
         }
-        val reduce = result.groupByKey(_.id).reduceGroups((a, b) => TuplaFase2Banco(a.id, a.mes, a.importe, insertAll(a.distancias.toArray, b.distancias.toArray, spark).toSeq))
+        val reduce = result.groupByKey(_.id).reduceGroups((a, b) => TuplaFase2Banco(a.id, a.mes, a.importe, insertAll(a.distancias.toArray, b.distancias.toArray, k, spark).toSeq))
         val maper = reduce.map { f => TuplaFase1Banco(f._2.id, f._2.mes, f._2.importe, IA(f._2.distancias.toArray, spark)) }
         maper
     }
@@ -87,12 +86,12 @@ object KNN_Bank {
      * @param rdd   es un arreglo de tipo TuplaFase1Banco que representa una partición de la base de datos asignada al KNNW_BigData
      * @return Retorna un iterador de tipo TuplaFase1Banco que representa la partición con las instancias actualizadas.
      */
-    def updateBanco(lista: Broadcast[Array[(TuplaFase1Banco)]], rdd: Array[TuplaFase1Banco], spark: SparkSession): Iterator[TuplaFase1Banco] = {
+    def updateBanco(lista: Broadcast[Array[TuplaFase1Banco]], rdd: Array[TuplaFase1Banco], spark: SparkSession): Iterator[TuplaFase1Banco] = {
 
         var pos = 0
         val result = rdd.map { iterator =>
             var r = iterator
-            var lis = lista.value
+            val lis = lista.value
             var encontrado = false
             var i = 0
             while (i < lis.length && !encontrado) {
@@ -135,7 +134,6 @@ object KNN_Bank {
      */
     def distancedsBanco2(row: TuplaBanco, iter: TuplaBanco, spark: SparkSession): Double = {
 
-        var i = 0
         var sumatoria: Double = 0
         val primerRango = 50
         val segundoRango = 2000
@@ -162,7 +160,6 @@ object KNN_Bank {
      */
     def distancedsBanco(row: TuplaFase1Banco, iter: TuplaFase1Banco, spark: SparkSession): Double = {
 
-        var i = 0
         var sumatoria: Double = 0
         val primerRango = 50
         val segundoRango = 2000

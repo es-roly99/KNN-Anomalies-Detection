@@ -22,7 +22,7 @@ object Distance {
             sum += math.pow(row1.apply(i) - row2.apply(i), 2)
             i += 1
         }
-        math.sqrt(sum)
+        Math.round(math.sqrt(sum) * 1000).toDouble / 1000
     }
 
 

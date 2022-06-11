@@ -10,6 +10,14 @@ object AuxiliaryClass {
      */
     case class Tupla(id: String, valores: Array[Double]) extends Serializable
 
+    /** Tupla es una estructura que se utiliza en los DataSets
+     *
+     * @constructor crea una nueva Tupla con su identificador y un arreglo compuesto por los valores de los atributos de la tupla.
+     * @param id      es un Long que representa el identificador único de la Tupla
+     * @param valores es un arreglo de Double que representa los valores de los atributos de la tupla
+     */
+    case class TuplaTrain(id: String, distance: Array[Double], valores: Array[Double]) extends Serializable
+
     /** TuplaBanco es una estructura que se utiliza en los DataSets
      *
      * @constructor crea una nueva tupla con su identificador, el dia del mes y el importe.
@@ -26,7 +34,7 @@ object AuxiliaryClass {
      * @param valores es un arreglo de Double que representa los valores de los atributos de la tupla
      * @param ia      es un Double que representa el índice de anomalía de la tupla
      */
-    case class TuplaFase1(id: String, valores: Seq[Double], ia: Double) extends Serializable
+    case class TuplaFase1(id: String, valores: Seq[Double], ia: Double, distance: Seq[Double]) extends Serializable
 
     /** TuplaFase1Banco es una estructura que se utiliza en el DataSet que se obtiene de la función fase1Banco
      *
@@ -63,8 +71,8 @@ object AuxiliaryClass {
      * @param ID es un Long que representa el identificador único de la tupla
      * @param ia es un Double que representa el índice de anomalía de la tupla
      */
-    case class Resultado(ID: String, ia: Double, data: Seq[Double]) extends Serializable
-    case class Clasificacion(id: String, ia: Double, data: Seq[Double], tipo: String) extends Serializable
+    case class Resultado(ID: String, ia: Double, data: Seq[Double], distance: Seq[Double]) extends Serializable
+    case class Clasificacion(id: String, ia: Double, distance: Seq[Double], data: Seq[Double], tipo: String) extends Serializable
 
     /** ResultadoBanco es una estructura que se utiliza en el DataSet que retorna la función exce
      *

@@ -1,0 +1,73 @@
+package knn
+
+import knn.AuxiliaryClass.{Clasificacion, TuplaFase1, TuplaTrain}
+import knn.KNN._
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.functions.col
+import org.apache.spark.storage.StorageLevel
+
+object Algorithm {
+
+
+    def train(data: Dataset[Row], dataTrain: Dataset[Row], spark: SparkSession, k: Int, p: Double, ID: String = "ID"): Dataset[Clasificacion] = {
+
+        import spark.implicits._
+
+
+        println("Parseando tuplas")
+        println("**********************************************")
+        println("              PARSEANDO TUPLAS")
+        println("**********************************************")
+        val ds = data.map { row => parseTupla(row, spark, ID) }
+        var dsTrain: Dataset[TuplaTrain] = null
+        if (dataTrain != null)
+             dsTrain = dataTrain.map { row => parseTuplaTrain(row, spark, ID) }
+
+
+        println("Ejecutando Fase1")
+        println("**********************************************")
+        println("                    FASE1")
+        println("**********************************************")
+        var dsfase1: Dataset[TuplaFase1] = null
+        if (dataTrain != null)
+            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+        else
+            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, dsTrain, k, spark ) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+        val filtro = (dsfase1.count() * p).toInt
+
+
+        println("Ordenando Fase1")
+        println("**********************************************")
+        println("                ORDENANDO FASE1")
+        println("**********************************************")
+        val lim = dsfase1.sort(col("ia").desc).limit(filtro).persist(StorageLevel.MEMORY_AND_DISK_SER)
+        val broadcast = spark.sparkContext.broadcast(lim.collect())
+
+
+        println("Ejecutando Fase2")
+        println("**********************************************")
+        println("                    FASE2")
+        println("**********************************************")
+        val outlier = fase2(broadcast, dsfase1, k, spark).persist(StorageLevel.MEMORY_AND_DISK_SER)
+        val bc = spark.sparkContext.broadcast(outlier.collect())
+
+
+        println("Ejecutando Update")
+        println("**********************************************")
+        println("                    UPDATE")
+        println("**********************************************")
+        val resultado = dsfase1.mapPartitions { iter => update(bc, iter.toArray, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+        val classData = clasificar(resultado, spark)
+
+
+        resultado.count()
+        outlier.unpersist()
+        lim.unpersist()
+        dsfase1.unpersist()
+        ds.unpersist()
+        println("Ejecutado algoritmo de deteccion de anomalias")
+        classData
+    }
+
+
+}

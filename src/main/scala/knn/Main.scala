@@ -1,16 +1,14 @@
 package knn
 
+import knn.AuxiliaryClass.Clasificacion
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
-
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io.FileNotFoundException
 
 object Main {
 
     def main(args: Array[String]): Unit = {
-
-        val db = "satimage_id"
 
         val spark = SparkSession
           .builder
@@ -18,21 +16,34 @@ object Main {
           .config("spark.master", "local")
           .getOrCreate()
 
-        val df = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
-
+        val db = "satimage_id"
         val k = 2
         val p = 0.01
+        var df_classified: Dataset[Clasificacion] = null
+        val data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
+
 
         val ini_time = System.nanoTime()
-        val df_classified = KNN.train(df, spark, k, p)
+
+        try {
+            val trained_data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("output/result/"+db +"_"+k)
+            df_classified = Algorithm.train(data, trained_data, spark, k, p)
+        }
+        catch {
+            case _: AnalysisException => df_classified = Algorithm.train(data, null, spark, k, p)
+        }
+
         val end_time = System.nanoTime()
 
-        df_classified.withColumn("data", stringify(df_classified.col("data")))
-          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/result/"+db)
+
+        df_classified
+          .withColumn("data", stringify(df_classified.col("data")))
+          .withColumn("distance", stringify(df_classified.col("distance")))
+          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/result/" + db + "_" + k)
 
         import spark.implicits._
         Seq(end_time-ini_time/1000000000.toDouble).toDF("Time")
-          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/"+db)
+          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/" + db + "_" + k)
 
         def stringify(c: Column) = concat(lit("["), concat_ws(",",c), lit("]"))
 

@@ -6,13 +6,11 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{StringType, StructField}
 import org.apache.spark.storage.StorageLevel
-import AuxiliaryClass._
-import knn.Distance.{euclidean, manhattan}
+import knn.AuxiliaryClass._
+import knn.Distance._
 
 object KNN {
 
-    var k = 0
-    var p = 0.0
 
     //Creando objeto logger necesario para almacenamiento de trazas de la aplicacion
     //private final val mylogger: Logger = LogManager.getLogger("KnnwoOD")
@@ -27,64 +25,11 @@ object KNN {
      * @return Retorna un Dataset que contiene el identificador único de las tuplas y su índice de anomalía correspondiente
      */
 
-    def train(data: Dataset[Row], spark: SparkSession, K: Int, P: Double, ID: String = "ID"): Dataset[Clasificacion] = {
-
-        k = K
-        p = P
-        val cantTupla = data.count()
-        import spark.implicits._
-
-        println("Parseando tuplas")
-        println("**********************************************")
-        println("              PARSEANDO TUPLAS")
-        println("**********************************************")
-        val ds = data.map { row => parseTupla(row, spark, ID) }
-        println("Ejecutando Fase1")
-
-        println("**********************************************")
-        println("                    FASE1")
-        println("**********************************************")
-        val dsfase1 = ds.mapPartitions { x => fase1(x.toArray, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
-        val filtro = (cantTupla * p).toInt
-
-        println("Ordenando Fase1")
-
-        println("**********************************************")
-        println("                ORDENANDO FASE1")
-        println("**********************************************")
-        val lim = dsfase1.sort(col("ia").desc).limit(filtro).persist(StorageLevel.MEMORY_AND_DISK_SER)
-        val broadcast = spark.sparkContext.broadcast(lim.collect())
-
-        println("Ejecutando Fase2")
-
-        println("**********************************************")
-        println("                    FASE2")
-        println("**********************************************")
-        val outlier = fase2(broadcast, dsfase1, spark).persist(StorageLevel.MEMORY_AND_DISK_SER)
-        val bc = spark.sparkContext.broadcast(outlier.collect())
-
-        println("Ejecutando Update")
-
-        println("**********************************************")
-        println("                    UPDATE")
-        println("**********************************************")
-        val resultado = dsfase1.mapPartitions { iter => update(bc, iter.toArray, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
-        val classData = clasificar(resultado, spark)
-
-        resultado.count()
-        outlier.unpersist()
-        lim.unpersist()
-        dsfase1.unpersist()
-        ds.unpersist()
-        println("Ejecutado algoritmo de deteccion de anomalias")
-        classData
-    }
 
     def clasificar(data: Dataset[Resultado], spark: SparkSession): Dataset[Clasificacion] = {
 
         import spark.implicits._
         val Stats = data.select("ia").describe().drop("summary").collect().slice(1, 3)
-        var struct = data.schema.add(StructField("tipo", StringType))
         val classData = data.map { x =>
             var tipo = ""
             val value = x.ia
@@ -94,7 +39,7 @@ object KNN {
                 tipo = "anomalia"
             else
                 tipo = "normal"
-            Clasificacion(x.ID, x.ia, x.data, tipo)
+            Clasificacion(x.ID, x.ia, x.distance, x.data, tipo)
         }
         classData
     }
@@ -108,19 +53,23 @@ object KNN {
      * @param spark es el SparkSession de la aplicación
      * @return Retorna un iterador de tipo TuplaFase1 que representa la partición de los datos que recibió la función con el índice de anomalía agregado a cada instancia.
      */
-    def fase1(lista: Array[Tupla], spark: SparkSession): Iterator[TuplaFase1] = {
+    def fase1(lista: Array[Tupla], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
 
         val iter = lista.map { x =>
             var l = Array[Double]()
 
             l = lista.aggregate(l)(
-                (v1, v2) => insert(manhattan(x.valores, v2.valores, spark), v1, spark),
-                (p, set) => insertAll(p, set, spark)
+                (v1, v2) => insert(euclidean(x.valores, v2.valores, spark), v1, k, spark),
+                (p, set) => insertAll(p, set, k, spark)
             )
 
-            TuplaFase1(x.id, x.valores, IA(l, spark))
+            TuplaFase1(x.id, x.valores, IA(l, spark), l)
         }
-        iter.toIterator
+        iter.iterator
+
+    }
+
+    def fase1(lista: Array[Tupla], listaTrained: Dataset[TuplaTrain], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
 
     }
 
@@ -137,21 +86,26 @@ object KNN {
      * @param rdd   es un Dataset de tipo TuplaFase1 que representa la base de datos asignada al KNNW_BigData
      * @return Retorna un Dataset de tipo TuplaFase1. Este Dataset es el conjunto de datosseleccionados para la segunda fase con sus índices de anomalías ajustados.
      */
-    def fase2(lista: Broadcast[Array[(TuplaFase1)]], rdd: Dataset[TuplaFase1], spark: SparkSession): Dataset[TuplaFase1] = {
+    def fase2(lista: Broadcast[Array[(TuplaFase1)]], rdd: Dataset[TuplaFase1], k: Int, spark: SparkSession): Dataset[TuplaFase1] = {
 
         import spark.implicits._
         val result = rdd.mapPartitions { iterator =>
             val arr = iterator.toArray
             val r = lista.value.map { x =>
-                var l = Array[Double]()
-                val iter = arr.aggregate(l)((v1, v2) => insert(euclidean(x.valores.toArray, v2.valores.toArray, spark), v1, spark), (p, set) => insertAll(p, set, spark))
+                val l = Array[Double]()
+
+                val iter = arr.aggregate(l)(
+                    (v1, v2) => insert(euclidean(x.valores.toArray, v2.valores.toArray, spark), v1, k, spark),
+                    (p, set) => insertAll(p, set, k, spark)
+                )
+
                 TuplaFase2(x.id, x.valores, iter)
             }
             r.iterator
         }
-        val reduce = result.groupByKey(_.id).reduceGroups((a, b) => TuplaFase2(a.id, a.valores, insertAll(a.distancias.toArray, b.distancias.toArray, spark).toSeq))
+        val reduce = result.groupByKey(_.id).reduceGroups((a, b) => TuplaFase2(a.id, a.valores, insertAll(a.distancias.toArray, b.distancias.toArray, k, spark).toSeq))
 
-        val maper = reduce.map { f => TuplaFase1(f._1, f._2.valores, IA(f._2.distancias.toArray, spark)) }
+        val maper = reduce.map { f => TuplaFase1(f._1, f._2.valores, IA(f._2.distancias.toArray, spark), f._2.distancias) }
         maper
     }
 
@@ -170,7 +124,7 @@ object KNN {
         var pos = 0
         val result = rdd.map { iterator =>
             var iter = iterator
-            var lis = lista.value
+            val lis = lista.value
             var encontrado = false
             var i = 0
             while (i < lis.length && !encontrado) {
@@ -183,11 +137,48 @@ object KNN {
                 i = i + 1
             }
             pos = pos + 1
-            val res = Resultado(iter.id, iter.ia, iter.valores)
+            val res = Resultado(iter.id, iter.ia, iter.valores, iter.distance)
             res
         }
         result.iterator
     }
+
+
+    /** insert es una función que inserta de manera ordenada en un arreglo un valor de tipo double. Esta función se emplea para determinar las k distancias más cercanas de una instancia.
+     *
+     * @param x     es un Double que representa una distancia
+     * @param list  es un arreglo de Double que representa las distancias más cercanas de una instancia
+     * @param spark es el SparkSession de la aplicación
+     * @return Retorna un arreglo de Double que representa las k distancias más cercanas de una instancia.
+     */
+    def insert(x: Double, list: Array[Double], k: Int, spark: SparkSession): Array[Double] = {
+
+        var tempL: Array[Double] = list
+        if (!x.isNaN) {
+            if (tempL.isEmpty) {
+                tempL = tempL.+:(x)
+                tempL
+            } else if (x < tempL.last) {
+                if (k > tempL.length) {
+                    insert(x, tempL.init, k, spark) ++ (tempL.takeRight(1))
+                }
+                else {
+                    tempL = insert(x, tempL.init, k, spark)
+                    tempL
+                }
+            }
+            else if (k > tempL.length) {
+                tempL = tempL.+:(x)
+                tempL
+            }
+            else
+                tempL
+        }
+        else
+            tempL
+
+    }
+
 
     /** insertAll es una función que combina dos vecindades de una instancia. El resultado es una k vecindad de las distancias más cercanas a una instancia.
      *
@@ -196,13 +187,13 @@ object KNN {
      * @param spark es el SparkSession de la aplicación
      * @return Retorna un arreglo de Double que representa las k distancias más cercanas de una instancia.
      */
-    def insertAll(a: Array[Double], b: Array[Double], spark: SparkSession): Array[Double] = {
+    def insertAll(a: Array[Double], b: Array[Double], k: Int, spark: SparkSession): Array[Double] = {
 
         var l = Array[Double]()
         if (a.length > 0 && b.length > 0) {
             l = a
             for (i <- b.indices)
-                l = insert(b.apply(i), l, spark)
+                l = insert(b.apply(i), l, k, spark)
             l
         }
         else if (a.length > 0) {
@@ -223,51 +214,7 @@ object KNN {
      * @return Retorna un Double que representa el índice de anomalía.
      */
     def IA(d: Array[Double], spark: SparkSession): Double = {
-
-        //    try{
-        val id = d.reduce((a, b) => a + b)
-        id
-        //      }
-        //    catch {
-        //      case e: Exception => mylogger.error(e.getMessage)
-        //        RegistroTrazas.writeLog(spark,InfoLogs.path,InfoLogs.executionType,InfoLogs.executionPeriod,Level.FATAL,"KnnwoOD","IA",e.getMessage)
-        //        -1 //Codigo de error
-        //    }
-    }
-
-    /** insert es una función que inserta de manera ordenada en un arreglo un valor de tipo double. Esta función se emplea para determinar las k distancias más cercanas de una instancia.
-     *
-     * @param x     es un Double que representa una distancia
-     * @param list  es un arreglo de Double que representa las distancias más cercanas de una instancia
-     * @param spark es el SparkSession de la aplicación
-     * @return Retorna un arreglo de Double que representa las k distancias más cercanas de una instancia.
-     */
-    def insert(x: Double, list: Array[Double], spark: SparkSession): Array[Double] = {
-
-        var tempL: Array[Double] = list
-        if (!x.isNaN) {
-            if (tempL.isEmpty) {
-                tempL = tempL.+:(x)
-                tempL
-            } else if (x < tempL.last) {
-                if (k > tempL.length) {
-                    insert(x, tempL.init, spark) ++ (tempL.takeRight(1))
-                }
-                else {
-                    tempL = insert(x, tempL.init, spark)
-                    tempL
-                }
-            }
-            else if (k > tempL.length) {
-                tempL = tempL.+:(x)
-                tempL
-            }
-            else
-                tempL
-        }
-        else
-            tempL
-
+        Math.round(d.sum * 100).toDouble / 100
     }
 
     /** parseTupla es una función que convirte el tipo de dato Row al tipo de dato Tupla
@@ -281,6 +228,20 @@ object KNN {
         val id = row.getString(row.fieldIndex(ID))
         valores = row.toSeq.filter(_.toString != id).map(_.toString.toDouble).toArray
         Tupla(id, valores)
+    }
+
+
+    /** parseTuplaNew es una función que convirte el tipo de dato Row al tipo de dato TuplaNew
+     *
+     * @param row   es una fila de la base de datos del tipo Row
+     * @param spark es el SparkSession de la aplicación
+     * @return Retorna una objeto de tipo Tupla
+     */
+    def parseTuplaTrain(row: Row, spark: SparkSession, ID: String = "ID"): TuplaTrain = {
+        val id = row.getString(row.fieldIndex(ID))
+        val distances = row.getString(row.fieldIndex("distances")).toArray.map{ x => x.toDouble }
+        val values = row.getString(row.fieldIndex("data")).toArray.map{ x => x.toDouble }
+        TuplaTrain(id, distances, values)
     }
 
 }
