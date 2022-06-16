@@ -13,7 +13,6 @@ object Distance {
      * @return Retorna un Double que representa la distancia euclidiana entre las filas row1 y row2.
      */
 
-
     def euclidean(row1: Array[Double], row2: Array[Double], spark: SparkSession): Double = {
         var i = 0
         var sum: Double = 0

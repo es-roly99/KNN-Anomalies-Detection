@@ -17,7 +17,7 @@ object Main {
           .getOrCreate()
 
         val db = "satimage_id"
-        val k = 2
+        val k = 3
         val p = 0.01
         var df_classified: Dataset[Clasificacion] = null
         val data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")

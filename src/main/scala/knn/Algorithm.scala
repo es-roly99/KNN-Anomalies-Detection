@@ -20,9 +20,9 @@ object Algorithm {
         println("**********************************************")
         val ds = data.map { row => parseTupla(row, spark, ID) }
         var dsTrain: Dataset[TuplaTrain] = null
-        if (dataTrain != null)
-             dsTrain = dataTrain.map { row => parseTuplaTrain(row, spark, ID) }
-
+        if (dataTrain != null) {
+              dsTrain = dataTrain.map { row => parseTuplaTrain(row, spark) }
+        }
 
         println("Ejecutando Fase1")
         println("**********************************************")
@@ -30,9 +30,10 @@ object Algorithm {
         println("**********************************************")
         var dsfase1: Dataset[TuplaFase1] = null
         if (dataTrain != null)
-            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+            dsfase1 = dsTrain.mapPartitions { x => fase1(x.toArray, ds, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
         else
-            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, dsTrain, k, spark ) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+
         val filtro = (dsfase1.count() * p).toInt
 
 
@@ -67,6 +68,8 @@ object Algorithm {
         ds.unpersist()
         println("Ejecutado algoritmo de deteccion de anomalias")
         classData
+
+
     }
 
 

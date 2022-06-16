@@ -45,17 +45,18 @@ object KNN {
     }
 
 
-    /** fase1 es una función que determina el indice de anomalía de una instancia en su partición. Inicialmente se obtiene las vecindades de las
-     *  instancias en la partición en que se encuentran.
-     * Luego a paritr de esta vecindad local se determina el índice de anomalia de la instancia.
+    /** fase1 es una función que determina el indice de anomalía de una instancia en su partición.
+     *        Inicialmente se obtiene las vecindades de las instancias en la partición en que se encuentran.
+     *        Luego a partir de esta vecindad local se determina el índice de anomalia de la instancia.
      *
      * @param lista es un arreglo de tipo Tupla que representa una partición de los datos
      * @param spark es el SparkSession de la aplicación
-     * @return Retorna un iterador de tipo TuplaFase1 que representa la partición de los datos que recibió la función con el índice de anomalía agregado a cada instancia.
+     * @return Retorna un iterador de tipo TuplaFase1 que representa la partición de los datos que recibió la función
+     *         con el índice de anomalía agregado a cada instancia.
      */
     def fase1(lista: Array[Tupla], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
 
-        val iter = lista.map { x =>
+        lista.map { x =>
             var l = Array[Double]()
 
             l = lista.aggregate(l)(
@@ -64,13 +65,28 @@ object KNN {
             )
 
             TuplaFase1(x.id, x.valores, IA(l, spark), l)
-        }
-        iter.iterator
 
+        }.iterator
     }
 
-    def fase1(lista: Array[Tupla], listaTrained: Dataset[TuplaTrain], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
+    def fase1(listaTrained: Array[TuplaTrain], lista: Dataset[Tupla], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
 
+        import spark.implicits._
+        var result: Dataset[TuplaFase1] = null
+
+        val iter = listaTrained.map { x =>
+
+            var l = Array[Double]()
+                l = listaTrained.aggregate(l)(
+                    (v1, v2) => insert(euclidean(x.valores, v2.valores, spark), v1, k, spark),
+                    (p, set) => insertAll(p, set, k, spark)
+                )
+
+                TuplaFase1(x.id, x.valores, IA(l, spark), l)
+
+
+        }
+        iter.iterator
     }
 
 
@@ -230,18 +246,19 @@ object KNN {
         Tupla(id, valores)
     }
 
-
-    /** parseTuplaNew es una función que convirte el tipo de dato Row al tipo de dato TuplaNew
+    /** parseTuplaTrain es una función que convirte el tipo de dato Row al tipo de dato TuplaTrain
      *
      * @param row   es una fila de la base de datos del tipo Row
      * @param spark es el SparkSession de la aplicación
      * @return Retorna una objeto de tipo Tupla
      */
-    def parseTuplaTrain(row: Row, spark: SparkSession, ID: String = "ID"): TuplaTrain = {
+    def parseTuplaTrain(row: Row, spark: SparkSession, ID: String = "id"): TuplaTrain = {
         val id = row.getString(row.fieldIndex(ID))
-        val distances = row.getString(row.fieldIndex("distances")).toArray.map{ x => x.toDouble }
-        val values = row.getString(row.fieldIndex("data")).toArray.map{ x => x.toDouble }
-        TuplaTrain(id, distances, values)
+        val d = row.getString(row.fieldIndex("distance"))
+        val distance = d.substring(1,d.length-1).split(',').map{ x => x.toDouble}
+        val v = row.getString(row.fieldIndex("data"))
+        val values = v.substring(1, v.length-1).split(',').map{ x => x.toDouble}
+        TuplaTrain(id, distance, values)
     }
 
 }
