@@ -69,24 +69,39 @@ object KNN {
         }.iterator
     }
 
-    def fase1(listaTrained: Array[TuplaTrain], lista: Dataset[Tupla], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
+    // unir los dos actualiza las distancias de los resultados
+    def fase1(listaTrained: Array[TuplaTrain], lista: Broadcast[Array[Tupla]], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
 
-        import spark.implicits._
-        var result: Dataset[TuplaFase1] = null
+        val i = listaTrained.map { x =>
 
-        val iter = listaTrained.map { x =>
+            var distances = x.distance
+            lista.value.foreach { y =>
+                distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
+            }
 
-            var l = Array[Double]()
-                l = listaTrained.aggregate(l)(
-                    (v1, v2) => insert(euclidean(x.valores, v2.valores, spark), v1, k, spark),
-                    (p, set) => insertAll(p, set, k, spark)
-                )
+          TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
+        }
 
-                TuplaFase1(x.id, x.valores, IA(l, spark), l)
+        i.iterator
+    }
 
+    //unir los dos para las calcular distancias de los nuevos
+    def fase1(lista: Array[Tupla], listaTrained: Broadcast[Array[TuplaTrain]], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
+
+        val i = lista.map { x =>
+
+            var distances = Array[Double]()
+            lista.foreach { y =>
+                distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
+            }
+            listaTrained.value.foreach { y =>
+                distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
+            }
+
+            TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
 
         }
-        iter.iterator
+        i.iterator
     }
 
 
@@ -172,27 +187,23 @@ object KNN {
         var tempL: Array[Double] = list
         if (!x.isNaN) {
             if (tempL.isEmpty) {
-                tempL = tempL.+:(x)
-                tempL
+                tempL.+:(x)
             } else if (x < tempL.last) {
                 if (k > tempL.length) {
                     insert(x, tempL.init, k, spark) ++ (tempL.takeRight(1))
                 }
                 else {
-                    tempL = insert(x, tempL.init, k, spark)
-                    tempL
+                    insert(x, tempL.init, k, spark)
                 }
             }
             else if (k > tempL.length) {
-                tempL = tempL.+:(x)
-                tempL
+                tempL.+:(x)
             }
             else
                 tempL
         }
         else
             tempL
-
     }
 
 

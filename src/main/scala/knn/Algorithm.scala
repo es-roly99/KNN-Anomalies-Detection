@@ -29,8 +29,14 @@ object Algorithm {
         println("                    FASE1")
         println("**********************************************")
         var dsfase1: Dataset[TuplaFase1] = null
-        if (dataTrain != null)
-            dsfase1 = dsTrain.mapPartitions { x => fase1(x.toArray, ds, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+
+        if (dataTrain != null) {
+            val dsBroadcast = spark.sparkContext.broadcast(ds.collect())
+            val dsTrainBroadcast = spark.sparkContext.broadcast(dsTrain.collect())
+            dsfase1 = dsTrain.mapPartitions { x => fase1(x.toArray, dsBroadcast, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+            dsfase1 = dsfase1.union (ds.mapPartitions { x => fase1(x.toArray, dsTrainBroadcast, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER))
+        }
+
         else
             dsfase1 = ds.mapPartitions { x => fase1(x.toArray, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
 
