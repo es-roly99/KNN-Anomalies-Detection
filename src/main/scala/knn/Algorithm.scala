@@ -38,7 +38,7 @@ object Algorithm {
         }
 
         else
-            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, null, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
 
         val filtro = (dsfase1.count() * p).toInt
 

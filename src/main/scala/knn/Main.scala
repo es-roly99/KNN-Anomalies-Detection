@@ -4,7 +4,9 @@ import knn.AuxiliaryClass.Clasificacion
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
+
 import java.io.FileNotFoundException
+import scala.concurrent.duration.{Duration, NANOSECONDS}
 
 object Main {
 
@@ -42,8 +44,9 @@ object Main {
           .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/result/" + db + "_" + k)
 
         import spark.implicits._
-        Seq(end_time-ini_time/1000000000.toDouble).toDF("Time")
+        Seq(Duration(end_time-ini_time,NANOSECONDS).toMillis.toDouble/1000).toDF("Time")
           .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/" + db + "_" + k)
+
 
         def stringify(c: Column) = concat(lit("["), concat_ws(",",c), lit("]"))
 
