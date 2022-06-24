@@ -9,12 +9,11 @@ import org.apache.spark.storage.StorageLevel
 object Algorithm {
 
 
-    def train(data: Dataset[Row], dataTrain: Dataset[Row], spark: SparkSession, k: Int, p: Double, ID: String = "ID"): Dataset[Clasificacion] = {
+    def train(data: Dataset[Row], dataTrain: Dataset[Row], spark: SparkSession, k: Int, p: Double, pivotOption:Int, ID: String = "ID"): Dataset[Clasificacion] = {
 
         import spark.implicits._
 
 
-        println("Parseando tuplas")
         println("**********************************************")
         println("              PARSEANDO TUPLAS")
         println("**********************************************")
@@ -24,7 +23,15 @@ object Algorithm {
               dsTrain = dataTrain.map { row => parseTuplaTrain(row, spark) }
         }
 
-        println("Ejecutando Fase1")
+        println("**********************************************")
+        println("                PIVOT SEARCH")
+        println("**********************************************")
+
+        val pivot = pivotOption match {
+            case 1 => PivotSearch.aleatoryPivot(ds, spark)
+            case 2 => PivotSearch.piaesaPivot(spark)
+        }
+
         println("**********************************************")
         println("                    FASE1")
         println("**********************************************")
@@ -43,7 +50,6 @@ object Algorithm {
         val filtro = (dsfase1.count() * p).toInt
 
 
-        println("Ordenando Fase1")
         println("**********************************************")
         println("                ORDENANDO FASE1")
         println("**********************************************")
@@ -51,7 +57,6 @@ object Algorithm {
         val broadcast = spark.sparkContext.broadcast(lim.collect())
 
 
-        println("Ejecutando Fase2")
         println("**********************************************")
         println("                    FASE2")
         println("**********************************************")
@@ -59,7 +64,6 @@ object Algorithm {
         val bc = spark.sparkContext.broadcast(outlier.collect())
 
 
-        println("Ejecutando Update")
         println("**********************************************")
         println("                    UPDATE")
         println("**********************************************")

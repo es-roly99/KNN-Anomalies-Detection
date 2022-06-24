@@ -18,7 +18,7 @@ object Main {
           .config("spark.master", "local")
           .getOrCreate()
 
-        val db = "satimage_id"
+        val db = "annthyroid"
         val k = 3
         val p = 0.01
         var df_classified: Dataset[Clasificacion] = null
