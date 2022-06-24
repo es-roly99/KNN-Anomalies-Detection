@@ -4,8 +4,6 @@ import knn.AuxiliaryClass.Clasificacion
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
-
-import java.io.FileNotFoundException
 import scala.concurrent.duration.{Duration, NANOSECONDS}
 
 object Main {
@@ -29,10 +27,10 @@ object Main {
 
         try {
             val trained_data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("output/result/"+db +"_"+k)
-            df_classified = Algorithm.train(data, trained_data, spark, k, p)
+            df_classified = Algorithm.train(data, trained_data, spark, k, p, 1)
         }
         catch {
-            case _: AnalysisException => df_classified = Algorithm.train(data, null, spark, k, p)
+            case _: AnalysisException => df_classified = Algorithm.train(data, null, spark, k, p, 1)
         }
 
         val end_time = System.nanoTime()

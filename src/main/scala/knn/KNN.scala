@@ -20,11 +20,8 @@ object KNN {
      *
      * @param data  es un Dataset de Row que contiene la base de datos a la que se le aplica el algoritmo KNNW_BigData
      * @param spark es el SparkSession de la aplicación
-     * @param K     es un valor entero que representa la cantidad de vecinos cercanos para una instancia
-     * @param P     es un valor Double que representa el por ciento de instancias que de mayor índice de anomalías que se seleccionan para la segunda fase del algoritmo.
      * @return Retorna un Dataset que contiene el identificador único de las tuplas y su índice de anomalía correspondiente
      */
-
 
     def clasificar(data: Dataset[Resultado], spark: SparkSession): Dataset[Clasificacion] = {
 
@@ -54,23 +51,18 @@ object KNN {
      * @return Retorna un iterador de tipo TuplaFase1 que representa la partición de los datos que recibió la función
      *         con el índice de anomalía agregado a cada instancia.
      */
-    def fase1(lista: Array[Tupla], listaTrained: Broadcast[Array[TuplaTrain]], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
+    def fase1(lista: Array[Tupla], k:Int, spark: SparkSession, pivots: Broadcast[Array[Pivot]]): Iterator[TuplaFase1] = {
         lista.map { x =>
             var distances = Array[Double]()
-            lista.foreach { y =>
+            PivotSearch.findNeighborhood(pivots.value, x.id).foreach { y =>
                 if (x.id != y.id) distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
-            }
-            if (listaTrained != null){
-                listaTrained.value.foreach { y =>
-                    if (x.id != y.id) distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
-                }
             }
             TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
         }.iterator
     }
 
-    // unir los dos actualiza las distancias de los resultados
-    def fase1(listaTrained: Array[TuplaTrain], lista: Broadcast[Array[Tupla]], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
+    // actualiza las distancias viejas
+    def fase1(listaTrained: Array[Tupla], lista: Broadcast[Array[Tupla]], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
         listaTrained.map { x =>
             var distances = x.distance
             lista.value.foreach { y =>
@@ -227,25 +219,20 @@ object KNN {
      * @return Retorna una objeto de tipo Tupla
      */
     def parseTupla(row: Row, spark: SparkSession, ID: String = "ID"): Tupla = {
-        var valores = Array[Double]()
         val id = row.getString(row.fieldIndex(ID))
-        valores = row.toSeq.filter(_.toString != id).map(_.toString.toDouble).toArray
-        Tupla(id, valores)
-    }
+        try{
+            val d = row.getString(row.fieldIndex("distance"))
+            val distance = d.substring(1,d.length-1).split(',').map{ x => x.toDouble}
+            val v = row.getString(row.fieldIndex("data"))
+            val values = v.substring(1, v.length-1).split(',').map{ x => x.toDouble}
+            Tupla(id, values, distance)
+        }
+        catch {
+            case _: Exception =>
+                val values = row.toSeq.filter(_.toString != id).map(_.toString.toDouble).toArray
+                Tupla(id, values, null)
+        }
 
-    /** parseTuplaTrain es una función que convirte el tipo de dato Row al tipo de dato TuplaTrain
-     *
-     * @param row   es una fila de la base de datos del tipo Row
-     * @param spark es el SparkSession de la aplicación
-     * @return Retorna una objeto de tipo Tupla
-     */
-    def parseTuplaTrain(row: Row, spark: SparkSession, ID: String = "id"): TuplaTrain = {
-        val id = row.getString(row.fieldIndex(ID))
-        val d = row.getString(row.fieldIndex("distance"))
-        val distance = d.substring(1,d.length-1).split(',').map{ x => x.toDouble}
-        val v = row.getString(row.fieldIndex("data"))
-        val values = v.substring(1, v.length-1).split(',').map{ x => x.toDouble}
-        TuplaTrain(id, distance, values)
     }
 
 }
