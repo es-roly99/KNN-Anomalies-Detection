@@ -1,11 +1,11 @@
-# Bank Anomalies Detection
+# KNN Anomalies Detection
 
 ## About
 This project
 will provide a new online processing based on data mining
 techniques, specifically KNN (K Nearest Neighbour)
 algorithm in Big Data, for the detection of anomalies
-or illicit transactions in bank movements.
+or illicit movements.
 The software is developed under Scala programming
 language using Apache Spark.
 
