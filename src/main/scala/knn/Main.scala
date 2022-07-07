@@ -17,8 +17,8 @@ object Main {
           .getOrCreate()
 
         val db = "annthyroid"
-        val k = 3
-        val p = 0.01
+        val k = 5
+        val p = 0.1
         var df_classified: Dataset[Clasificacion] = null
         val data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
 

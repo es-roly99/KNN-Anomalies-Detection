@@ -12,9 +12,7 @@ object PivotSearch {
     def findNeighborhood(pivots: Array[Pivot], id: String): Array[Tupla] = {
         var list: Array[Tupla] = null
         pivots.foreach { x => x.nearestNeighbor.foreach { y =>
-            if (y.id == id) {
-                list = x.nearestNeighbor.toArray
-            }
+            if (y.id == id) list = x.nearestNeighbor.toArray
         }}
         list
     }

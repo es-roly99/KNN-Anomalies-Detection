@@ -5,7 +5,7 @@ import knn.AuxiliaryClass.{TuplaBanco, TuplaFase1Banco, TuplaFase2Banco}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
-object KNN_Bank {
+object KNNBank {
 
 
     /** fase1Banco es una función que determina el indice de anomalía de una instancia en su partición. Inicialmente se obtiene las vecindades de las instancias en la partición en que se encuentran.
