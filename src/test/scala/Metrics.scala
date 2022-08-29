@@ -15,8 +15,8 @@ object Metrics {
           .config("spark.master", "local")
           .getOrCreate()
 
-        val db = "mammography"
-        val k = 5
+        val db = "satimage"
+        val k = 3
 
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
 
@@ -35,14 +35,11 @@ object Metrics {
         println("Precision: " + Metrics.precision(tp, fp) )
         println("Recall: " + Metrics.recall(tp, fn) )
 
-
     }
-
 
     def confusionMatrix(dataset: Dataset[Row], spark: SparkSession): Array[Int] = {
 
         import spark.implicits._
-
         val a = dataset.map { x =>
 
             val v = x.getString(x.fieldIndex("data"))

@@ -10,51 +10,52 @@ import org.apache.spark.storage.StorageLevel
 object Algorithm {
 
 
-    def train(data: Dataset[Row], dataTrain: Dataset[Row], spark: SparkSession, k: Int, p: Double, pivotOption:Int, ID: String = "ID"): Dataset[Clasificacion] = {
+    def train(dataNew: Dataset[Row], dataTrained: Dataset[Row], spark: SparkSession, k: Int, p: Double, pivotOption:Int, ID: String = "ID"): Dataset[Clasificacion] = {
 
         import spark.implicits._
-
 
         println("**********************************************")
         println("              PARSEANDO TUPLAS")
         println("**********************************************")
-        val ds = data.map { row => parseTupla(row, spark, ID) }
-        var dsTrain: Dataset[Tupla] = null
-        var dataset: Dataset[Tupla] = ds
-        if (dataTrain != null) {
-              dsTrain = dataTrain.map { row => parseTupla(row, spark, "id") }
-              dataset = dsTrain.union(ds)
+        val dsNew = dataNew.map { row => parseTupla(row, spark, ID) }
+        var dsTrained: Dataset[Tupla] = dsNew
+        if (dataTrained != null) {
+              dsTrained = dataTrained.map { row => parseTupla(row, spark, "id") }
         }
 
         println("**********************************************")
         println("                PIVOT SEARCH")
         println("**********************************************")
-
-        val pivots: Broadcast[Array[Pivot]] = pivotOption match {
-            case 1 => spark.sparkContext.broadcast(PivotSearch.aleatoryPivot(dataset, spark))
-           // case 2 => spark.sparkContext.broadcast(PivotSearch.piaesaPivot(spark))
+        var neighborhoods: Dataset[Neighborhood] = pivotOption match {
+            case 1 => PivotSearch.aleatoryPivot(dsTrained, spark)
+           // case 2 => PivotSearch.piaesaPivot(spark)
+        }
+        if (dataTrained != null) {
+            neighborhoods = PivotSearch.setCloserNeighborhood(neighborhoods, dsNew.collect(), spark)
         }
 
+
         println("**********************************************")
-        println("                    FASE1")
+        println("                   FASE 1")
         println("**********************************************")
         var dsfase1: Dataset[TuplaFase1] = null
 
-        if (dataTrain != null) {
-            val dsBroadcast = spark.sparkContext.broadcast(ds.collect())
-            dsfase1 = dsTrain.mapPartitions { x => fase1(x.toArray, dsBroadcast, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
-            dsfase1 = dsfase1.union (ds.mapPartitions { x => fase1(x.toArray, k, spark, pivots) }.persist(StorageLevel.MEMORY_AND_DISK_SER))
+        if (dataTrained != null) {
+            val dsNewBroadcast = spark.sparkContext.broadcast(dsNew.collect())
+            dsfase1 = dsTrained.mapPartitions { x => stage1(x.toArray, dsNewBroadcast, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+           //   .union()
+            //dsfase1 = dsfase1.union (ds.mapPartitions { x => fase1(x.toArray, k, spark, pivots) }.persist(StorageLevel.MEMORY_AND_DISK_SER))
         }
 
-        else
-            dsfase1 = ds.mapPartitions { x => fase1(x.toArray, k, spark, pivots) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
-
-        val filtro = (dsfase1.count() * p).toInt
+        else {
+            dsfase1 = neighborhoods.mapPartitions { neighborhood => stage1(neighborhood, k, spark)}.coalesce(1).persist(StorageLevel.MEMORY_AND_DISK_SER)
+        }
 
 
         println("**********************************************")
         println("                ORDENANDO FASE1")
         println("**********************************************")
+        val filtro = (dsfase1.count() * p).toInt
         val lim = dsfase1.sort(col("ia").desc).limit(filtro).persist(StorageLevel.MEMORY_AND_DISK_SER)
         val broadcast = spark.sparkContext.broadcast(lim.collect())
 
@@ -77,12 +78,10 @@ object Algorithm {
         outlier.unpersist()
         lim.unpersist()
         dsfase1.unpersist()
-        ds.unpersist()
+        dsNew.unpersist()
         println("Ejecutado algoritmo de deteccion de anomalias")
         classData
 
-
     }
-
 
 }

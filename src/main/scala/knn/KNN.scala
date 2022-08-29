@@ -51,18 +51,38 @@ object KNN {
      * @return Retorna un iterador de tipo TuplaFase1 que representa la partición de los datos que recibió la función
      *         con el índice de anomalía agregado a cada instancia.
      */
-    def fase1(lista: Array[Tupla], k:Int, spark: SparkSession, pivots: Broadcast[Array[Pivot]]): Iterator[TuplaFase1] = {
-        lista.map { x =>
-            var distances = Array[Double]()
-            PivotSearch.findNeighborhood(pivots.value, x.id).foreach { y =>
-                if (x.id != y.id) distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
+//    def fase1(lista: Array[Tupla], k:Int, spark: SparkSession, pivots: Broadcast[Array[Pivot]]): Iterator[TuplaFase1] = {
+//        lista.map { x =>
+//            var distances = Array[Double]()
+//            PivotSearch.findNeighborhood(pivots.value, x.id).foreach { y =>
+//                if (x.id != y.id) distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
+//            }
+//            TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
+//        }.iterator
+//    }
+
+
+    // Fase 1 primera iteracion
+    def stage1(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TuplaFase1] = {
+    neighborhoods.flatMap { neighborhood =>
+            neighborhood.neighbors.map { x =>
+                var distances = Array[Double]()
+                neighborhood.neighbors.foreach { y =>
+                    if (x.id != y.id) distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
+                }
+                TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
             }
-            TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
-        }.iterator
+        }
     }
 
-    // actualiza las distancias viejas
-    def fase1(listaTrained: Array[Tupla], lista: Broadcast[Array[Tupla]], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
+    // Fase 1 varias iteraciones actualiza distancias viejas ****arregla****
+    def stagehj1(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TuplaFase1] = {
+     null
+    }
+
+
+        // actualiza las distancias viejas
+    def stage1(listaTrained: Array[Tupla], lista: Broadcast[Array[Tupla]], k:Int, spark: SparkSession): Iterator[TuplaFase1] = {
         listaTrained.map { x =>
             var distances = x.distance
             lista.value.foreach { y =>

@@ -19,7 +19,7 @@ object Main {
         val p = 0.1
         var df_classified: Dataset[Clasificacion] = null
         val data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
-          .randomSplit(Array(x1))
+          .randomSplit(Array(1))
 
 
         val ini_time = System.nanoTime()

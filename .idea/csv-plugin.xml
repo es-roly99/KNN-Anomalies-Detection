@@ -10,7 +10,28 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/db/bank_id.csv">
+        <entry key="/output/result/satimage_3/part-00000-4ecfc49e-6cea-4156-9533-510c1e9e9e5f-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/result/satimage_3/part-00000-c40a4a06-ce6d-4b90-a125-1a51aabc3361-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/time/satimage_3/part-00000-3752dd6c-07ef-4694-8583-88fba2b03fa7-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/output/time/satimage_3/part-00000-8c74afc3-6034-4afe-9edd-f3e7726ace6a-c000.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

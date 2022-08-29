@@ -16,33 +16,31 @@ object Main {
           .config("spark.master", "local")
           .getOrCreate()
 
-        val db = "annthyroid"
-        val k = 5
+        val db = "satimage"
+        val k = 3
         val p = 0.1
-        var df_classified: Dataset[Clasificacion] = null
-        val data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
+        val dataNew = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
+        var dataResult: Dataset[Clasificacion] = null
 
 
-        val ini_time = System.nanoTime()
-
+        val iniTime = System.nanoTime()
         try {
-            val trained_data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("output/result/"+db +"_"+k)
-            df_classified = Algorithm.train(data, trained_data, spark, k, p, 1)
+            val dataTrained = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("output/result/"+db +"_"+k)
+            dataResult = Algorithm.train(dataNew, dataTrained, spark, k, p, 1)
         }
         catch {
-            case _: AnalysisException => df_classified = Algorithm.train(data, null, spark, k, p, 1)
+            case _: AnalysisException => dataResult = Algorithm.train(dataNew, null, spark, k, p, 1)
         }
+        val endTime = System.nanoTime()
 
-        val end_time = System.nanoTime()
 
-
-        df_classified
-          .withColumn("data", stringify(df_classified.col("data")))
-          .withColumn("distance", stringify(df_classified.col("distance")))
+        dataResult
+          .withColumn("data", stringify(dataResult.col("data")))
+          .withColumn("distance", stringify(dataResult.col("distance")))
           .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/result/" + db + "_" + k)
 
         import spark.implicits._
-        Seq(Duration(end_time-ini_time,NANOSECONDS).toMillis.toDouble/1000).toDF("Time")
+        Seq(Duration(endTime-iniTime,NANOSECONDS).toMillis.toDouble/1000).toDF("Time")
           .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/" + db + "_" + k)
 
 
