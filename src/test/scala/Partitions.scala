@@ -2,6 +2,7 @@ import knn.Algorithm
 import knn.AuxiliaryClass.Clasificacion
 import org.apache.spark.sql.{AnalysisException, Column, Dataset, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{concat, concat_ws, lit}
+
 import scala.concurrent.duration.{Duration, NANOSECONDS}
 
 object Partitions {
@@ -14,9 +15,10 @@ object Partitions {
           .config("spark.master", "local")
           .getOrCreate()
 
-        val db = "annthyroid"
-        val k = 5
+        val db = "satimage"
+        val k = 20
         val p = 0.1
+        val pivotOption = 1
         var df_classified: Dataset[Clasificacion] = null
         val data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
 
@@ -28,10 +30,10 @@ object Partitions {
 
             try {
                 val trained_data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
-                df_classified = Algorithm.train(partition, trained_data, spark, k, p, 1)
+                df_classified = Algorithm.train(partition, trained_data, spark, k, p, pivotOption )
             }
             catch {
-                case _: AnalysisException => df_classified = Algorithm.train(partition, null, spark, k, p, 1)
+                case _: AnalysisException => df_classified = Algorithm.train(partition, null, spark, k, p, pivotOption)
             }
 
             val end_time = System.nanoTime()

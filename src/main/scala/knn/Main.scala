@@ -17,8 +17,9 @@ object Main {
           .getOrCreate()
 
         val db = "satimage"
-        val k = 3
+        val k = 5
         val p = 0.1
+        val pivotOption = 1
         val dataNew = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
         var dataResult: Dataset[Clasificacion] = null
 
@@ -26,10 +27,10 @@ object Main {
         val iniTime = System.nanoTime()
         try {
             val dataTrained = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("output/result/"+db +"_"+k)
-            dataResult = Algorithm.train(dataNew, dataTrained, spark, k, p, 1)
+            dataResult = Algorithm.train(dataNew, dataTrained, spark, k, p, pivotOption)
         }
         catch {
-            case _: AnalysisException => dataResult = Algorithm.train(dataNew, null, spark, k, p, 1)
+            case _: AnalysisException => dataResult = Algorithm.train(dataNew, null, spark, k, p, pivotOption)
         }
         val endTime = System.nanoTime()
 

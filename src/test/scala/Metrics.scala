@@ -16,7 +16,7 @@ object Metrics {
           .getOrCreate()
 
         val db = "satimage"
-        val k = 3
+        val k = 20
 
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
 

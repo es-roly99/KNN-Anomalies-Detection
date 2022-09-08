@@ -2,7 +2,6 @@ package knn
 
 import knn.AuxiliaryClass._
 import knn.KNN._
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.storage.StorageLevel
@@ -17,10 +16,10 @@ object Algorithm {
         println("**********************************************")
         println("              PARSEANDO TUPLAS")
         println("**********************************************")
-        val dsNew = dataNew.map { row => parseTupla(row, spark, ID) }
+        val dsNew = dataNew.map { row => parseTupla(row, spark, ID) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
         var dsTrained: Dataset[Tupla] = dsNew
         if (dataTrained != null) {
-              dsTrained = dataTrained.map { row => parseTupla(row, spark, "id") }
+              dsTrained = dataTrained.map { row => parseTupla(row, spark, "id") }.persist(StorageLevel.MEMORY_AND_DISK_SER)
         }
 
         println("**********************************************")
@@ -28,7 +27,7 @@ object Algorithm {
         println("**********************************************")
         var neighborhoods: Dataset[Neighborhood] = pivotOption match {
             case 1 => PivotSearch.aleatoryPivot(dsTrained, spark)
-           // case 2 => PivotSearch.piaesaPivot(spark)
+            case 2 => PivotSearch.AESAPivot(dsTrained, spark)
         }
         if (dataTrained != null) {
             neighborhoods = PivotSearch.setCloserNeighborhood(neighborhoods, dsNew.collect(), spark)
@@ -39,19 +38,19 @@ object Algorithm {
         println("                   FASE 1")
         println("**********************************************")
         var dsfase1: Dataset[TuplaFase1] = null
+        val dsTrainedBroadcast = spark.sparkContext.broadcast(dsTrained.collect())
+        val dsNewBroadcast = spark.sparkContext.broadcast(dsNew.collect())
 
         if (dataTrained != null) {
-            val dsNewBroadcast = spark.sparkContext.broadcast(dsNew.collect())
-            dsfase1 = dsTrained.mapPartitions { x => stage1(x.toArray, dsNewBroadcast, k, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
-           //   .union()
-            //dsfase1 = dsfase1.union (ds.mapPartitions { x => fase1(x.toArray, k, spark, pivots) }.persist(StorageLevel.MEMORY_AND_DISK_SER))
+            dsfase1 = dsTrained.mapPartitions { x => stage1(x,dsNewBroadcast, k, spark) }
+              .union ( dsNew.mapPartitions { x => stage1(x, dsTrainedBroadcast, k, spark) } )
+              .coalesce(1).persist(StorageLevel.MEMORY_AND_DISK_SER)
         }
-
         else {
             dsfase1 = neighborhoods.mapPartitions { neighborhood => stage1(neighborhood, k, spark)}.coalesce(1).persist(StorageLevel.MEMORY_AND_DISK_SER)
         }
 
-
+/*
         println("**********************************************")
         println("                ORDENANDO FASE1")
         println("**********************************************")
@@ -71,12 +70,15 @@ object Algorithm {
         println("                    UPDATE")
         println("**********************************************")
         val resultado = dsfase1.mapPartitions { iter => update(bc, iter.toArray, spark) }.persist(StorageLevel.MEMORY_AND_DISK_SER)
+
+
+      // */ val resultado = dsfase1.map(x=>Resultado(x.id,x.ia,x.valores, x.distance))
         val classData = clasificar(resultado, spark)
 
 
         resultado.count()
-        outlier.unpersist()
-        lim.unpersist()
+//        outlier.unpersist()
+//        lim.unpersist()
         dsfase1.unpersist()
         dsNew.unpersist()
         println("Ejecutado algoritmo de deteccion de anomalias")

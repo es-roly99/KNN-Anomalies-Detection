@@ -66,7 +66,7 @@ object AuxiliaryClass {
     case class Resultado(ID: String, ia: Double, data: Seq[Double], distance: Seq[Double]) extends Serializable
     case class Clasificacion(id: String, ia: Double, distance: Seq[Double], data: Seq[Double], tipo: String) extends Serializable
 
-    case class Neighborhood(pivot: Tupla, neighbors: Seq[Tupla], neighborNew: Seq[Tupla]) extends Serializable
+    case class Neighborhood(pivot: Tupla, neighbors: Seq[Tupla]) extends Serializable
 
     /** ResultadoBanco es una estructura que se utiliza en el DataSet que retorna la función exce
      *
