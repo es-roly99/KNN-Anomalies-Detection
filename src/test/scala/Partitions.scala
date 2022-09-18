@@ -17,7 +17,6 @@ object Partitions {
 
         val db = "satimage"
         val k = 20
-        val p = 0.1
         val pivotOption = 1
         var df_classified: Dataset[Clasificacion] = null
         val data = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
@@ -30,10 +29,10 @@ object Partitions {
 
             try {
                 val trained_data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
-                df_classified = Algorithm.train(partition, trained_data, spark, k, p, pivotOption )
+                df_classified = Algorithm.train(partition, trained_data, spark, k, pivotOption )
             }
             catch {
-                case _: AnalysisException => df_classified = Algorithm.train(partition, null, spark, k, p, pivotOption)
+                case _: AnalysisException => df_classified = Algorithm.train(partition, null, spark, k, pivotOption)
             }
 
             val end_time = System.nanoTime()

@@ -1,11 +1,7 @@
 package knn
 
-import org.apache.log4j.{LogManager, Logger}
 import org.apache.spark.broadcast._
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
-import org.apache.spark.sql.functions._
-import org.apache.spark.sql.types.{StringType, StructField}
-import org.apache.spark.storage.StorageLevel
 import knn.AuxiliaryClass._
 import knn.Distance._
 
@@ -53,30 +49,56 @@ object KNN {
      */
     // Fase 1 primera iteracion
     def stage1(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TuplaFase1] = {
-    neighborhoods.flatMap { neighborhood =>
+        neighborhoods.flatMap { neighborhood =>
             neighborhood.neighbors.map { x =>
                 var distances = Array[Double]()
                 neighborhood.neighbors.foreach { y =>
-                    if (x.id != y.id) distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
+                    if (x.id != y.id) distances = insert(euclidean(x.values, y.values, spark), distances, k, spark)
                 }
-                TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
+                TuplaFase1(x.id, x.values, IA(distances, spark), distances)
             }
         }
     }
 
     // Fase 1 varias iteraciones
     def stage1(uno: Iterator[Tupla], dos: Broadcast[Array[Tupla]], k: Int, spark: SparkSession): Iterator[TuplaFase1] = {
-       uno.map { x =>
-           var distances =  if (x.distance!= null) x.distance else Array[Double]()
-           dos.value.foreach { y =>
-               distances = insert(euclidean(x.valores, y.valores, spark), distances, k, spark)
-           }
-           TuplaFase1(x.id, x.valores, IA(distances, spark), distances)
-       }
+        uno.toArray.map { x =>
+            var distances = if (x.distance!= null) x.distance else Array[Double]()
+            if (distances.isEmpty) {
+                uno.foreach { y =>
+                    if (x.id != y.id) distances = insert(euclidean(x.values, y.values, spark), distances, k, spark) }
+            }
+            dos.value.foreach { y => distances = insert(euclidean(x.values, y.values, spark), distances, k, spark) }
+            TuplaFase1(x.id, x.values, IA(distances, spark), distances)
+        }.iterator
+    }
+
+    def stage1m(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TuplaFase1] = {
+        neighborhoods.flatMap { neighborhood =>
+            neighborhood.neighbors.map { neighbor =>
+                var distances =  neighbor.distance
+                neighborhood.neighborsNew.foreach { neighborNew =>
+                    distances = insert(euclidean(neighbor.values, neighborNew.values, spark), distances, k, spark)
+                }
+                TuplaFase1(neighbor.id, neighbor.values, IA(distances, spark), distances)
+            }
+        }
+    }
+
+    def stage1mm(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TuplaFase1] = {
+        neighborhoods.flatMap { neighborhood =>
+            neighborhood.neighborsNew.map { neighborNew =>
+                var distances = Array[Double]()
+                neighborhood.neighbors.foreach {x =>
+                    distances = insert(euclidean(x.values, neighborNew.values, spark), distances, k, spark)
+                }
+                TuplaFase1(neighborNew.id, neighborNew.values, IA(distances, spark), distances)
+            }
+        }
     }
 
 
-    /**
+        /**
      * fase2 es la función que se encarga de ajustar el índice de anomalía de las instancias seleccionadas para la segunda fase del algoritmo KNNW_BigData. Inicialmente esta función determina
      * las vecindades, en todas las particiones de la base de datos, de las instancias seleccionadas. Posteriormente se agrupan las vecindades por el identificador de las instancias.
      * Luego se reducen estas vecindades en una sola con los k vecinos más cercanos de toda la base de datos. Por último, se define a partir de la nueva vecindad de la instancia el nuevo índice de anomalía.

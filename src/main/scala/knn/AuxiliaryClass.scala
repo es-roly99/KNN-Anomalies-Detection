@@ -6,9 +6,9 @@ object AuxiliaryClass {
      *
      * @constructor crea una nueva Tupla con su identificador y un arreglo compuesto por los valores de los atributos de la tupla.
      * @param id      es un Long que representa el identificador único de la Tupla
-     * @param valores es un arreglo de Double que representa los valores de los atributos de la tupla
+     * @param values es un arreglo de Double que representa los valores de los atributos de la tupla
      */
-    case class Tupla(id: String, valores: Array[Double], distance: Array[Double]) extends Serializable
+    case class Tupla(id: String, values: Array[Double], distance: Array[Double]) extends Serializable
 
     /** TuplaBanco es una estructura que se utiliza en los DataSets
      *
@@ -66,7 +66,8 @@ object AuxiliaryClass {
     case class Resultado(ID: String, ia: Double, data: Seq[Double], distance: Seq[Double]) extends Serializable
     case class Clasificacion(id: String, ia: Double, distance: Seq[Double], data: Seq[Double], tipo: String) extends Serializable
 
-    case class Neighborhood(pivot: Tupla, neighbors: Seq[Tupla]) extends Serializable
+    case class Neighborhood(pivot: Tupla, neighbors: Seq[Tupla], neighborsNew: Seq[Tupla]) extends Serializable
+    case class ClosetNeighbors(pivot: Tupla, neighbors: Seq[Tupla]) extends Serializable
 
     /** ResultadoBanco es una estructura que se utiliza en el DataSet que retorna la función exce
      *

@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Anomalies Detection - KNN.iml" filepath="$PROJECT_DIR$/.idea/modules/Anomalies Detection - KNN.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Anomalies Detection KNN-build.iml" filepath="$PROJECT_DIR$/.idea/modules/Anomalies Detection KNN-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Anomalies Detection - KNN-build.iml" filepath="$PROJECT_DIR$/.idea/modules/Anomalies Detection - KNN-build.iml" />
     </modules>
   </component>
 </project>

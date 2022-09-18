@@ -16,7 +16,7 @@ object Metrics {
           .getOrCreate()
 
         val db = "satimage"
-        val k = 20
+        val k = 100
 
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
 
@@ -31,9 +31,9 @@ object Metrics {
         println("False Positives: " + fp)
         println("False Negatives: " + fn)
 
-        println("Accuracy: " + Metrics.accuracy(tp, tn, fp, fn) )
-        println("Precision: " + Metrics.precision(tp, fp) )
-        println("Recall: " + Metrics.recall(tp, fn) )
+        println("Accuracy: " + BigDecimal (Metrics.accuracy(tp, tn, fp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
+        println("Precision: " + BigDecimal (Metrics.precision(tp, fp) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
+        println("Recall: " + BigDecimal (Metrics.recall(tp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
 
     }
 

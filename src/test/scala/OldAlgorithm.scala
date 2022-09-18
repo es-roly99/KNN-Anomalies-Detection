@@ -13,9 +13,11 @@ import org.apache.spark.storage.StorageLevel
  * @author Omar Torres Domínguez
  *
  */
+
+
 object OldAlgorithm {
 
-    var k = 2
+    var k = 30
 
     var p = 0.01
 
