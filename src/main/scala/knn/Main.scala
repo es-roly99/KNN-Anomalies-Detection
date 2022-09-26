@@ -17,7 +17,7 @@ object Main {
           .getOrCreate()
 
         val db = "satimage"
-        val k = 100
+        val k = 50
         val pivotOption = 1
         val dataNew = spark.read.options(Map("delimiter"->",", "header"->"true")).csv("db/"+db+".csv")
         var dataResult: Dataset[Clasificacion] = null

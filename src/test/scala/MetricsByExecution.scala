@@ -16,14 +16,14 @@ object MetricsByExecution {
           .config("spark.master", "local")
           .getOrCreate()
 
-        val db = "annthyroid"
-        val k = 10
+        val db = "mammography"
+        val k = 100
         val pivotOption = 1
 
         var df_classified: Dataset[Clasificacion] = null
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("db/" + db + ".csv")
 
-        val splitData = data.randomSplit(Array(0.8, 0.1, 0.1))
+        val splitData = data.randomSplit(Array(0.5, 0.1, 0.1, 0.1, 0.1, 0.1))
 
 
         val dataResult = splitData.map { partition =>
@@ -31,7 +31,7 @@ object MetricsByExecution {
             val ini_time = System.nanoTime()
 
             try {
-                val trained_data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
+                val trained_data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("result/" + db + "_" + k)
                 df_classified = Algorithm.train(partition, trained_data, spark, k, pivotOption)
             }
             catch {
@@ -44,13 +44,13 @@ object MetricsByExecution {
             df_classified
               .withColumn("data", stringify(df_classified.col("data")))
               .withColumn("distance", stringify(df_classified.col("distance")))
-              .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/result/" + db + "_" + k)
+              .write.mode(SaveMode.Overwrite).option("header", "true").csv("result/" + db + "_" + k)
 
 
             def stringify(c: Column) = concat(lit("["), concat_ws(",", c), lit("]"))
 
 
-            val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
+            val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("result/" + db + "_" + k)
 
             val metrics = Metrics.confusionMatrix(data, spark)
 
@@ -69,6 +69,7 @@ object MetricsByExecution {
         println("************************************************")
         println("************************************************")
         println("************************************************")
+        println("Time: " + dataResult.map(_._1).mkString("", "seg , ", ""))
         println("True Positives: " + dataResult.map(_._2).mkString("", ", ", ""))
         println("True Negatives: " + dataResult.map(_._3).mkString("", ", ", ""))
         println("False Positives: " + dataResult.map(_._4).mkString("", ", ", ""))
@@ -80,11 +81,6 @@ object MetricsByExecution {
         println("************************************************")
         println("************************************************")
         println("************************************************")
-
-
-        import spark.implicits._
-        dataResult.map(_._1).toSeq.toDF("Time")
-          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/" + db + "_" + k)
 
     }
 

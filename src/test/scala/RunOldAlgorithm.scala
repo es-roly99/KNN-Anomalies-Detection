@@ -15,12 +15,16 @@ object RunOldAlgorithm {
           .config("spark.master", "local")
           .getOrCreate()
 
-        val db = "annthyroid"
+        val db = "mammography"
         val k = 100
         val p = 0.1
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("db/" + db + ".csv")
         var df_classified: Dataset[Clasificacion] = null
-        val splitData = Array(data.sample(.80), data.sample(.90), data.sample(1))
+        val splitData =
+            //Array(data)
+            Array(data.sample(.50), data.sample(.60),
+                data.sample(.70), data.sample(.80),
+                data.sample(.90), data.sample(1))
 
         val dataResult = splitData.map { partition =>
 
@@ -30,11 +34,11 @@ object RunOldAlgorithm {
 
             df_classified
               .withColumn("data", stringify(df_classified.col("data")))
-              .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/result/" + db + "_" + k)
+              .write.mode(SaveMode.Overwrite).option("header", "true").csv("result/" + db + "_" + k)
 
             def stringify(c: Column) = concat(lit("["), concat_ws(",", c), lit("]"))
 
-            val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
+            val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("result/" + db + "_" + k)
             val metrics = Metrics.confusionMatrix(data, spark)
 
             val tp = metrics(0).toDouble
@@ -51,6 +55,7 @@ object RunOldAlgorithm {
         println("************************************************")
         println("************************************************")
         println("************************************************")
+        println("Time: " + dataResult.map(_._1).mkString("", " seg, ", ""))
         println("True Positives: " + dataResult.map(_._2).mkString("", ", ", ""))
         println("True Negatives: " + dataResult.map(_._3).mkString("", ", ", ""))
         println("False Positives: " + dataResult.map(_._4).mkString("", ", ", ""))
@@ -63,9 +68,9 @@ object RunOldAlgorithm {
         println("************************************************")
         println("************************************************")
 
-        import spark.implicits._
-        dataResult.map(_._1).toSeq.toDF("Time")
-          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/" + db + "_" + k)
+//        import spark.implicits._
+//        dataResult.map(_._1).toSeq.toDF("Time")
+//          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/" + db + "_" + k)
 
     }
 

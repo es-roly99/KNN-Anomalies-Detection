@@ -3,39 +3,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD._
 
 
-
 object Metrics {
-
-
-    def main(args: Array[String]): Unit = {
-
-        val spark = SparkSession
-          .builder
-          .appName("Spark KNN")
-          .config("spark.master", "local")
-          .getOrCreate()
-
-        val db = "satimage"
-        val k = 100
-
-        val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("output/result/" + db + "_" + k)
-
-        val metrics = Metrics.confusionMatrix(data, spark)
-        val tp = metrics(0).toDouble
-        val tn = metrics(1).toDouble
-        val fp = metrics(2).toDouble
-        val fn = metrics(3).toDouble
-
-        println("True Positives: " + tp)
-        println("True Negatives: " + tn)
-        println("False Positives: " + fp)
-        println("False Negatives: " + fn)
-
-        println("Accuracy: " + BigDecimal (Metrics.accuracy(tp, tn, fp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
-        println("Precision: " + BigDecimal (Metrics.precision(tp, fp) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
-        println("Recall: " + BigDecimal (Metrics.recall(tp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble)
-
-    }
 
     def confusionMatrix(dataset: Dataset[Row], spark: SparkSession): Array[Int] = {
 
