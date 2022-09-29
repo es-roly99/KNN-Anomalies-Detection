@@ -563,7 +563,7 @@ object OldAlgorithm {
      * @param ia es un Double que representa el índice de anomalía de la tupla
      */
     case class Resultado(ID: String, ia: Double, data:Seq[Double]) extends Serializable
-    case class Clasificacion(id: String, ia: Double, data:Seq[Double], tipo:String) extends Serializable
+    case class Clasificacion(id: String, ia: Double, values:Seq[Double], classification:String) extends Serializable
 
     /** ResultadoBanco es una estructura que se utiliza en el DataSet que retorna la función exce
      *

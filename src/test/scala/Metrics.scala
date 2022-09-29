@@ -10,9 +10,9 @@ object Metrics {
         import spark.implicits._
         val a = dataset.map { x =>
 
-            val v = x.getString(x.fieldIndex("data"))
+            val v = x.getString(x.fieldIndex("values"))
             val realValue = v.substring(1, v.length-1).split(',').map{ x => x.toDouble}.last.toInt
-            val prediction = if(x.getString(x.fieldIndex("tipo")) == "normal") 0 else 1
+            val prediction = if(x.getString(x.fieldIndex("classification")) == "normal") 0 else 1
 
             if (realValue == 0 && prediction == 0) "tn"
             else if (realValue == 1 && prediction == 1) "tp"

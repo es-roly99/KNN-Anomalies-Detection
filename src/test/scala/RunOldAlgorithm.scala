@@ -1,4 +1,5 @@
 import OldAlgorithm.Clasificacion
+import knn.Configuration
 import org.apache.spark.sql.{AnalysisException, Column, Dataset, SaveMode, SparkSession}
 import org.apache.spark.sql.functions.{concat, concat_ws, lit}
 
@@ -9,22 +10,17 @@ object RunOldAlgorithm {
 
     def main(args: Array[String]): Unit = {
 
-        val spark = SparkSession
-          .builder
-          .appName("Spark KNN")
-          .config("spark.master", "local")
-          .getOrCreate()
-
-        val db = "mammography"
-        val k = 100
+        val spark = Configuration.spark
+        val db = Configuration.database
+        val k = Configuration.k
         val p = 0.1
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("db/" + db + ".csv")
         var df_classified: Dataset[Clasificacion] = null
         val splitData =
             //Array(data)
-            Array(data.sample(.50), data.sample(.60),
-                data.sample(.70), data.sample(.80),
-                data.sample(.90), data.sample(1))
+            Array(data.sample(.50, seed = Configuration.seed), data.sample(.60, seed = Configuration.seed),
+                  data.sample(.70, seed = Configuration.seed), data.sample(.80, seed = Configuration.seed),
+                  data.sample(.90, seed = Configuration.seed), data.sample(1, seed = Configuration.seed))
 
         val dataResult = splitData.map { partition =>
 
@@ -33,7 +29,7 @@ object RunOldAlgorithm {
             val end_time = System.nanoTime()
 
             df_classified
-              .withColumn("data", stringify(df_classified.col("data")))
+              .withColumn("values", stringify(df_classified.col("values")))
               .write.mode(SaveMode.Overwrite).option("header", "true").csv("result/" + db + "_" + k)
 
             def stringify(c: Column) = concat(lit("["), concat_ws(",", c), lit("]"))
@@ -67,10 +63,6 @@ object RunOldAlgorithm {
         println("************************************************")
         println("************************************************")
         println("************************************************")
-
-//        import spark.implicits._
-//        dataResult.map(_._1).toSeq.toDF("Time")
-//          .write.mode(SaveMode.Overwrite).option("header", "true").csv("output/time/" + db + "_" + k)
 
     }
 

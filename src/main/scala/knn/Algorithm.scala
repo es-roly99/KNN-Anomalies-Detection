@@ -9,18 +9,19 @@ import org.apache.spark.storage.StorageLevel
 object Algorithm {
 
 
-    def train(dataNew: Dataset[Row], dataTrained: Dataset[Row], spark: SparkSession, k: Int, pivotOption:Int, ID: String = "ID"): Dataset[Clasificacion] = {
+    def train(dataNew: Dataset[Row], dataTrained: Dataset[Row], spark: SparkSession, k: Int, pivotOption:Int, ID: String = "ID"): Dataset[Result] = {
 
 
         import spark.implicits._
 
         println("**********************************************")
-        println("              PARSEANDO TUPLAS")
+        println("              PARSING TUPLES")
         println("**********************************************")
-        val dsNew = dataNew.map { row => parseTupla(row, spark, ID) }
-        var dsTrained: Dataset[Tupla] = dsNew
+
+        val dsNew = dataNew.map { row => parseTuple(row, spark, ID) }
+        var dsTrained: Dataset[Tuple] = dsNew
         if (dataTrained != null) {
-              dsTrained = dataTrained.map { row => parseTupla(row, spark, "id") }
+              dsTrained = dataTrained.map { row => parseTuple(row, spark, "id") }
         }
 
 
@@ -28,24 +29,23 @@ object Algorithm {
         println("            NEIGHBORHOODS SEARCH")
         println("**********************************************")
 
-        val pivots = spark.sparkContext.broadcast(dsTrained.sample(0.001).collect())
+        val pivotsBroadcast = spark.sparkContext.broadcast(dsTrained.sample(0.001, seed = Configuration.seed).collect())
         var neighborhoods: Dataset[Neighborhood] = pivotOption match {
-            case 1 => NeighborhoodsSearch.aleatoryNeighborhoods(pivots, dsTrained, spark)
+            case 1 => NeighborhoodsSearch.aleatoryNeighborhoods(pivotsBroadcast, dsTrained, spark)
         }
 
-        val neighborhoodsBroadcast = spark.sparkContext.broadcast(neighborhoods.collect())
         if (dataTrained != null) {
-            val ppp =  dsNew.mapPartitions { newNeighbors =>
-                NeighborhoodsSearch.findClosetNeighborhood(newNeighbors.toSeq, neighborhoodsBroadcast, spark)
+            val neighborhoodsNew =  dsNew.mapPartitions { newNeighbors =>
+                NeighborhoodsSearch.findNeighborhood(newNeighbors.toSeq, pivotsBroadcast, spark)
             }
-            neighborhoods = NeighborhoodsSearch.mergeNeighborhoods(ppp ,neighborhoodsBroadcast, spark)
+            neighborhoods = NeighborhoodsSearch.mergeNeighborhoods(neighborhoodsNew ,neighborhoods.collect(), spark)
         }
 
 
         println("**********************************************")
-        println("                   FASE 1")
+        println("                   STAGE 1")
         println("**********************************************")
-        var dsStage1: Dataset[TuplaFase1] = null
+        var dsStage1: Dataset[TupleStage1] = null
 
         if  (dataTrained != null) {
             dsStage1 = neighborhoods.mapPartitions { neighborhood => stage1m(neighborhood, k, spark)}
@@ -53,10 +53,14 @@ object Algorithm {
         }
         else {
             dsStage1 = neighborhoods.mapPartitions { neighborhood => stage1(neighborhood, k, spark)}
-              .coalesce(1)
         }
 
-        val dsClassified = clasificar(dsStage1.map { x=>Resultado(x.id,x.ia,x.valores, x.distance) }, spark)
+
+        println("**********************************************")
+        println("               CLASSIFICATION")
+        println("**********************************************")
+
+        val dsClassified = classify(dsStage1, spark)
         dsClassified
 
     }
