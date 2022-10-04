@@ -17,6 +17,6 @@ Scala -> 2.13.8
 
 sbt -> 1.6.2
 
-spark-core -> 3.2.1
+spark-core -> 3.2.2
 
-spark-sql ->3.2.1
+spark-sql ->3.2.2
