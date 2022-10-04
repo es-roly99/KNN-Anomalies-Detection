@@ -11,8 +11,8 @@ object Algorithm {
 
     def train(dataNew: Dataset[Row], dataTrained: Dataset[Row], spark: SparkSession, k: Int, pivotOption:Int, ID: String = "ID"): Dataset[Result] = {
 
-
         import spark.implicits._
+
 
         println("**********************************************")
         println("              PARSING TUPLES")
@@ -29,16 +29,16 @@ object Algorithm {
         println("            NEIGHBORHOODS SEARCH")
         println("**********************************************")
 
-        val pivotsBroadcast = spark.sparkContext.broadcast(dsTrained.sample(0.001, seed = Configuration.seed).collect())
         var neighborhoods: Dataset[Neighborhood] = pivotOption match {
-            case 1 => NeighborhoodsSearch.aleatoryNeighborhoods(pivotsBroadcast, dsTrained, spark)
+            case 1 => NeighborhoodsSearch.aleatoryNeighborhoods(dsTrained, spark)
         }
 
         if (dataTrained != null) {
+            val pivots = neighborhoods.map(_.pivot).collect()
             val neighborhoodsNew =  dsNew.mapPartitions { newNeighbors =>
-                NeighborhoodsSearch.findNeighborhood(newNeighbors.toSeq, pivotsBroadcast, spark)
+                NeighborhoodsSearch.findNeighborhood(newNeighbors.toSeq, pivots, spark)
             }
-            neighborhoods = NeighborhoodsSearch.mergeNeighborhoods(neighborhoodsNew ,neighborhoods.collect(), spark)
+            neighborhoods = NeighborhoodsSearch.mergeNeighborhoods(neighborhoodsNew, neighborhoods.collect(), spark)
         }
 
 
@@ -48,11 +48,12 @@ object Algorithm {
         var dsStage1: Dataset[TupleStage1] = null
 
         if  (dataTrained != null) {
-            dsStage1 = neighborhoods.mapPartitions { neighborhood => stage1m(neighborhood, k, spark)}
-              .union( neighborhoods.mapPartitions { neighborhood => stage1mm(neighborhood, k, spark)})
+            dsStage1 = neighborhoods.mapPartitions { neighborhood => stage1Neighbors(neighborhood, k, spark)}
+              .union( neighborhoods.mapPartitions { neighborhood => stage1NeighborsNew(neighborhood, k, spark)})
         }
         else {
             dsStage1 = neighborhoods.mapPartitions { neighborhood => stage1(neighborhood, k, spark)}
+              .coalesce(1)
         }
 
 
@@ -62,7 +63,7 @@ object Algorithm {
 
         val dsClassified = classify(dsStage1, spark)
         dsClassified
-
     }
+
 
 }

@@ -7,11 +7,11 @@ import knn.Distance._
 
 object KNN {
 
-    /** parseTupla es una función que convirte el tipo de dato Row al tipo de dato Tupla
+    /** parseTuple es una función que convirte el tipo de dato Row al tipo de dato Tupla
      *
-     * @param row   es una fila de la base de datos del tipo Row
-     * @param spark es el SparkSession de la aplicación
-     * @return Retorna una objeto de tipo Tupla
+     * @param row es una fila de la base de datos del tipo Row
+     * @param spark SparkSession
+     * @return Retorna una objeto de tipo Tuple
      */
     def parseTuple(row: Row, spark: SparkSession, ID: String = "ID"): Tuple = {
         val id = row.getString(row.fieldIndex(ID))
@@ -31,11 +31,11 @@ object KNN {
 
 
     /**
-     * exce es la función que se encarga de ejecutar el algoritmo KNNW_BigData.
+     * classify es la función que se encarga de clasificar las Tuplas de la fase 1 segun sus distancias
      *
-     * @param data  es un Dataset de Row que contiene la base de datos a la que se le aplica el algoritmo KNNW_BigData
+     * @param data  es un Dataset de Tupla Stage1 que contiene la base de datos a clasificar
      * @param spark es el SparkSession de la aplicación
-     * @return Retorna un Dataset que contiene el identificador único de las tuplas y su índice de anomalía correspondiente
+     * @return Retorna un Dataset de Result que contiene la base de datos clasificada
      */
     def classify(data: Dataset[TupleStage1], spark: SparkSession): Dataset[Result] = {
 
@@ -56,16 +56,14 @@ object KNN {
     }
 
 
-    /** fase1 es una función que determina el indice de anomalía de una instancia en su partición.
-     *        Inicialmente se obtiene las vecindades de las instancias en la partición en que se encuentran.
-     *        Luego a partir de esta vecindad local se determina el índice de anomalia de la instancia.
+    /** stage1 es una función que calcula las k distancias mas cercanas de cada Tupla en su vecindad.
+     *  Esta funcion es utilizada en la primera iteracion del algoritmo
      *
-     * @param lista es un arreglo de tipo Tupla que representa una partición de los datos
-     * @param spark es el SparkSession de la aplicación
-     * @return Retorna un iterador de tipo TuplaFase1 que representa la partición de los datos que recibió la función
-     *         con el índice de anomalía agregado a cada instancia.
+     * @param neighborhoods Iterador de las vecindades
+     * @param k Entero que representa la cantidad de vecinos cercanos
+     * @param spark SparkSession
+     * @return Iterador de TupleStage1 que representan las tuplas con las distancias mas cercanas a cada vecindad
      */
-    // Fase 1 primera iteracion
     def stage1(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
         neighborhoods.flatMap { neighborhood =>
             neighborhood.neighbors.map { x =>
@@ -78,8 +76,16 @@ object KNN {
         }
     }
 
-    // Fase 1 varias iteraciones
-    def stage1m(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
+
+    /** stage1Neighbors es una función que calcula las k distancias mas cercanas de cada Tupla en su vecindad.
+     * Esta funcion es utilizada para actualizar las distancias de las Tuplas del flujo anterior
+     *
+     * @param neighborhoods Iterador de las vecindades
+     * @param k             Entero que representa la cantidad de vecinos cercanos
+     * @param spark         SparkSession
+     * @return Iterador de TupleStage1 que representan las tuplas con las distancias mas cercanas a cada vecindad
+     */
+    def stage1Neighbors(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
         neighborhoods.flatMap { neighborhood =>
             neighborhood.neighbors.map { neighbor =>
                 var distances =  neighbor.distances
@@ -91,7 +97,16 @@ object KNN {
         }
     }
 
-    def stage1mm(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
+
+    /** stage1NeighborsNew es una función que calcula las k distancias mas cercanas de cada Tupla en su vecindad.
+     * Esta funcion es utilizada para calcular las distancias de las Tuplas del nuevo flujo
+     *
+     * @param neighborhoods Iterador de las vecindades
+     * @param k             Entero que representa la cantidad de vecinos cercanos
+     * @param spark         SparkSession
+     * @return Iterador de TupleStage1 que representan las tuplas con las distancias mas cercanas a cada vecindad
+     */
+    def stage1NeighborsNew(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
         neighborhoods.flatMap { neighborhood =>
             neighborhood.neighborsNew.map { neighborNew =>
                 var distances = Array[Double]()
@@ -103,12 +118,13 @@ object KNN {
         }
     }
 
-    
-        /** insert es una función que inserta de manera ordenada en un arreglo un valor de tipo double. Esta función se emplea para determinar las k distancias más cercanas de una instancia.
+
+    /** insert es una función que inserta de manera ordenada en un arreglo un valor de tipo double
+     * Esta función se emplea para determinar las k distancias más cercanas de una instancia.
      *
-     * @param x     es un Double que representa una distancia
-     * @param list  es un arreglo de Double que representa las distancias más cercanas de una instancia
-     * @param spark es el SparkSession de la aplicación
+     * @param x Double que representa una distancia
+     * @param list arreglo de Double que representa las distancias más cercanas de una instancia
+     * @param spark SparkSession
      * @return Retorna un arreglo de Double que representa las k distancias más cercanas de una instancia.
      */
     def insert(x: Double, list: Array[Double], k: Int, spark: SparkSession): Array[Double] = {
@@ -139,8 +155,8 @@ object KNN {
 
     /** IA es una función que determina el índice de anomalía a partir de una vecindad de una instancia. El índice de anomalia no es mas que la suma de todas las distancias de los k vecinos cercanos.
      *
-     * @param distances     es un arreglo de tipo Double que representa las distancias de los k vecinos de una instancia a esta
-     * @param spark es el SparkSession de la aplicación
+     * @param distances arreglo de Double que representa las distancias de los k vecinos de una instancia a esta
+     * @param spark SparkSession
      * @return Retorna un Double que representa el índice de anomalía.
      */
     def IA(distances: Array[Double], spark: SparkSession): Double = { distances.sum }

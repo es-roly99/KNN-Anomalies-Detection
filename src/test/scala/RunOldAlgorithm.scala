@@ -18,8 +18,7 @@ object RunOldAlgorithm {
         var df_classified: Dataset[Clasificacion] = null
         val splitData =
             //Array(data)
-            Array(data.sample(.50, seed = Configuration.seed), data.sample(.60, seed = Configuration.seed),
-                  data.sample(.70, seed = Configuration.seed), data.sample(.80, seed = Configuration.seed),
+            Array(data.sample(.70, seed = Configuration.seed), data.sample(.80, seed = Configuration.seed),
                   data.sample(.90, seed = Configuration.seed), data.sample(1, seed = Configuration.seed))
 
         val dataResult = splitData.map { partition =>

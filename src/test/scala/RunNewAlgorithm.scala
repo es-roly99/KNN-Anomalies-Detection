@@ -17,8 +17,7 @@ object RunNewAlgorithm {
 
         var df_classified: Dataset[Result] = null
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("db/" + db + ".csv")
-
-        val splitData = data.randomSplit(Array(0.5, 0.1, 0.1, 0.1, 0.1, 0.1), seed = Configuration.seed)
+        val splitData = data.randomSplit(Array(0.7, 0.1, 0.1, 0.1), seed = Configuration.seed)
 
 
         val dataResult = splitData.map { partition =>
