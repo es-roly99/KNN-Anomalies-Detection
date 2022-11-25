@@ -31,4 +31,8 @@ object Metrics {
 
     def recall (tp: Double, fn: Double): Double = tp / (tp + fn)
 
+    def specificity(tn: Double, fp: Double): Double = tn / (tn + fp)
+
+    def f1(precision: Double, recall: Double): Double = (2 * precision * recall) / (precision + recall)
+
 }

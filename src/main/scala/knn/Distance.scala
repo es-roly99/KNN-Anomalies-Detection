@@ -5,6 +5,14 @@ import org.apache.spark.sql.SparkSession
 object Distance {
 
 
+    class Distance{
+
+    }
+
+    class Euclidean
+
+
+
     /** euclidean es una función que determina la distancia euclidiana entre dos filas
      *
      * @param row1  es un arreglo de tipo Double que representa una fila de la base de datos
@@ -20,7 +28,7 @@ object Distance {
             sum += math.pow(row1.apply(i) - row2.apply(i), 2)
             i += 1
         }
-        Math.round(math.sqrt(sum) * 1000).toDouble / 1000
+        Math.round(math.sqrt(sum) * 1000000000).toDouble / 1000000000
     }
 
 
@@ -50,7 +58,7 @@ object Distance {
      * @param spark es el SparkSession de la aplicación
      * @return Retorna un Double que representa la distancia máxima entre las filas row1 y row2.
      */
-    def max_distance(row1: Array[Double], row2: Array[Double], spark: SparkSession): Double = {
+    def maxDistance(row1: Array[Double], row2: Array[Double], spark: SparkSession): Double = {
         var i = 0
         var sum: Double = 0
         var max: Double = 0

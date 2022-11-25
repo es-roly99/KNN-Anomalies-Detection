@@ -10,7 +10,7 @@
             </Attribute>
           </value>
         </entry>
-        <entry key="/db/celeba.csv">
+        <entry key="/db/bank.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -25,6 +25,111 @@
           </value>
         </entry>
         <entry key="/db/satimage.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/db/shuttle.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/db/smtp.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/annthyroid_5/part-00000-110990c1-6ffa-44a5-a578-facb484b6bc0-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/annthyroid_5/part-00000-1d9c3d04-b0c0-4e32-8723-6cde6cddb0cf-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/annthyroid_5/part-00000-830fb90b-794f-4451-b37d-112b490286d9-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/annthyroid_5/part-00000-9adf7a32-520d-4bc2-b2d4-06b4d95145f0-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/annthyroid_5/part-00001-110990c1-6ffa-44a5-a578-facb484b6bc0-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/annthyroid_5/part-00001-1d9c3d04-b0c0-4e32-8723-6cde6cddb0cf-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/mammography_10/part-00000-6a2bb889-144b-447b-ae23-3bdb1f6fd048-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/mammography_10/part-00000-edeeb505-2187-48c5-84a3-28a45e2891a5-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/mammography_5/part-00000-3a553f01-4cf2-4dee-8a29-1f6bf7b546d1-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/mammography_5/part-00000-a4b0ee6b-1dbd-4ff1-bb0a-447793d72eee-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/mammography_5/part-00001-249d8bcd-1070-4413-b934-b0cdcd0b341c-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/mammography_5/part-00001-269d9df8-ba06-4428-8433-6b410a33c5c0-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/smtp_25/part-00001-a7b66668-359f-410b-b4cb-5d0c362db753-c000.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

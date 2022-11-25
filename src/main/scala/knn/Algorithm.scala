@@ -50,6 +50,8 @@ object Algorithm {
         if  (dataTrained != null) {
             dsStage1 = neighborhoods.mapPartitions { neighborhood => stage1Neighbors(neighborhood, k, spark)}
               .union( neighborhoods.mapPartitions { neighborhood => stage1NeighborsNew(neighborhood, k, spark)})
+              .coalesce(1)
+
         }
         else {
             dsStage1 = neighborhoods.mapPartitions { neighborhood => stage1(neighborhood, k, spark)}

@@ -55,15 +55,17 @@ object RunNewAlgorithm {
             val accuracy = BigDecimal (Metrics.accuracy(tp, tn, fp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
             val precision = BigDecimal (Metrics.precision(tp, fp) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
             val recall = BigDecimal (Metrics.recall(tp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+            val specificity = BigDecimal (Metrics.specificity(tn, fp) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+            val f1 = BigDecimal (Metrics.f1(precision, recall)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
 
-            (Duration(end_time - ini_time, NANOSECONDS).toMillis.toDouble / 1000, tp, tn, fp, fn, accuracy, precision, recall)
+            (Duration(end_time - ini_time, NANOSECONDS).toMillis.toDouble / 1000, tp, tn, fp, fn, accuracy, precision, recall, specificity, f1)
         }
 
 
         println("************************************************")
         println("************************************************")
         println("************************************************")
-        println("Time: " + dataResult.map(_._1).mkString("", "seg , ", ""))
+        println("Time: " + dataResult.map(_._1).mkString("", ", ", ""))
         println("True Positives: " + dataResult.map(_._2).mkString("", ", ", ""))
         println("True Negatives: " + dataResult.map(_._3).mkString("", ", ", ""))
         println("False Positives: " + dataResult.map(_._4).mkString("", ", ", ""))
@@ -71,6 +73,8 @@ object RunNewAlgorithm {
         println("Accuracy: " + dataResult.map(_._6).mkString("", ", ", ""))
         println("Precision: " + dataResult.map(_._7).mkString("", ", ", ""))
         println("Recall: " + dataResult.map(_._8).mkString("", ", ", ""))
+        println("Specificity: " + dataResult.map(_._9).mkString("", ", ", ""))
+        println("F1: " + dataResult.map(_._10).mkString("", ", ", ""))
         println("************************************************")
         println("************************************************")
         println("************************************************")
