@@ -45,6 +45,20 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="/result/satimage_20/part-00000-cdf1ac64-f10d-44b2-a2f9-cb2387e9a287-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="/result/shuttle_20/part-00000-b74608c7-dfb6-4aaf-bdb8-4c371b0322c2-c000.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
       </map>
     </option>
   </component>

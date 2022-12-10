@@ -14,11 +14,11 @@ object NeighborhoodsSearch {
      * @param spark SparkSession
      * @return Dataset de Neighborhood con las vecindades creadas
      */
-    def aleatoryNeighborhoods(list: Dataset[Tuple], spark: SparkSession): Dataset[Neighborhood] = {
+    def aleatoryNeighborhoods(list: Dataset[Tuple], distance: Distance, spark: SparkSession): Dataset[Neighborhood] = {
         val pivots = list.sample(0.001, seed = Configuration.seed).collect()
         import spark.implicits._
         list.mapPartitions { x =>
-            findNeighborhood(x.toSeq, pivots, spark)
+            findNeighborhood(x.toSeq, pivots, distance, spark)
         }.groupByKey(_.pivot).mapGroups { (key, value) =>
             Neighborhood(key, value.flatMap(_.neighbors).toSeq, Seq[Tuple]())
         }
@@ -49,10 +49,10 @@ object NeighborhoodsSearch {
      * @param spark SparkSession
      * @return
      */
-    def findNeighborhood(neighbors: Seq[Tuple], pivots: Array[Tuple], spark: SparkSession): Iterator[Neighborhood] = {
+    def findNeighborhood(neighbors: Seq[Tuple], pivots: Array[Tuple], distance: Distance, spark: SparkSession): Iterator[Neighborhood] = {
         neighbors.map { neighbor =>
             pivots.map { pivot =>
-                (pivot, neighbor, euclidean(pivot.values, neighbor.values, spark))
+                (pivot, neighbor, distance.calculate(pivot.values, neighbor.values, spark))
             }.reduce { (x,y) => if(x._3 < y._3) x else y}
         }.groupBy(_._1)
           .map { x => Neighborhood(x._1, x._2.map(_._2), Seq[Tuple]())}

@@ -13,7 +13,6 @@ object RunNewAlgorithm {
         val spark = Configuration.spark
         val db = Configuration.database
         val k = Configuration.k
-        val pivotOption = Configuration.pivotOption
 
         var df_classified: Dataset[Result] = null
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("db/" + db + ".csv")
@@ -26,10 +25,10 @@ object RunNewAlgorithm {
 
             try {
                 val trained_data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("result/" + db + "_" + k)
-                df_classified = Algorithm.train(partition, trained_data, spark, k, pivotOption)
+                df_classified = Algorithm.train(partition, trained_data)
             }
             catch {
-                case _: AnalysisException => df_classified = Algorithm.train(partition, null, spark, k, pivotOption)
+                case _: AnalysisException => df_classified = Algorithm.train(partition, null)
             }
 
             val end_time = System.nanoTime()
@@ -53,11 +52,16 @@ object RunNewAlgorithm {
             val fp = metrics(2).toDouble
             val fn = metrics(3).toDouble
             val accuracy = BigDecimal (Metrics.accuracy(tp, tn, fp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
-            val precision = BigDecimal (Metrics.precision(tp, fp) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+            var precision: Double = 0
+            if (tp != 0 || fp != 0) {
+                precision = BigDecimal(Metrics.precision(tp, fp) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+            }
             val recall = BigDecimal (Metrics.recall(tp, fn) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
             val specificity = BigDecimal (Metrics.specificity(tn, fp) * 100).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
-            val f1 = BigDecimal (Metrics.f1(precision, recall)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
-
+            var f1: Double = 0
+            if (precision != 0 || recall != 0) {
+                 f1 = BigDecimal(Metrics.f1(precision, recall)).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
+            }
             (Duration(end_time - ini_time, NANOSECONDS).toMillis.toDouble / 1000, tp, tn, fp, fn, accuracy, precision, recall, specificity, f1)
         }
 

@@ -13,8 +13,8 @@ object KNN {
      * @param spark SparkSession
      * @return Retorna una objeto de tipo Tuple
      */
-    def parseTuple(row: Row, spark: SparkSession, ID: String = "ID"): Tuple = {
-        val id = row.getString(row.fieldIndex(ID))
+    def parseTuple(row: Row, spark: SparkSession): Tuple = {
+        val id = row.getString(row.fieldIndex(Configuration.id))
         try {
             val d = row.getString(row.fieldIndex("distances"))
             val distance = d.substring(1, d.length - 1).split(',').map { x => x.toDouble }
@@ -30,33 +30,6 @@ object KNN {
     }
 
 
-    /**
-     * classify es la función que se encarga de clasificar las Tuplas de la fase 1 según sus distancias
-     *
-     * @param data  es un Dataset de Tupla Stage1 que contiene la base de datos a clasificar
-     * @param spark es el SparkSession de la aplicación
-     * @return Retorna un Dataset de Result que contiene la base de datos clasificada
-     */
-    def classify(data: Dataset[TupleStage1], spark: SparkSession): Dataset[Result] = {
-
-        import spark.implicits._
-        val Stats = data.select("ia").describe().drop("summary").collect().slice(1, 3)
-
-        data.map { x =>
-            var category = ""
-            val value = x.ia
-            val mean = Stats(0).getString(0).toDouble
-            val StDev = Stats(1).getString(0).toDouble
-            if (value > (mean + Configuration.p * StDev))
-                category = "anomaly"
-            else {
-                category = "normal"
-            }
-            Result(x.id, x.ia, x.distances, x.values, category)
-        }
-    }
-
-
     /** stage1 es una función que calcula las k distancias mas cercanas de cada Tupla en su vecindad.
      *  Esta funcion es utilizada en la primera iteracion del algoritmo
      *
@@ -65,12 +38,12 @@ object KNN {
      * @param spark SparkSession
      * @return Iterador de TupleStage1 que representan las tuplas con las distancias mas cercanas a cada vecindad
      */
-    def stage1(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
+    def stage1(neighborhoods: Iterator[Neighborhood], k: Int, distance: Distance, spark: SparkSession): Iterator[TupleStage1] = {
         neighborhoods.flatMap { neighborhood =>
             neighborhood.neighbors.map { x =>
                 var distances = Array[Double]()
                 neighborhood.neighbors.foreach { y =>
-                    if (x.id != y.id) distances = insert(maxDistance(x.values, y.values, spark), distances, k, spark)
+                    if (x.id != y.id) distances = insert(distance.calculate(x.values, y.values, spark), distances, k, spark)
                 }
                 TupleStage1(x.id, x.values, IA(distances, spark), distances)
             }
@@ -86,12 +59,12 @@ object KNN {
      * @param spark         SparkSession
      * @return Iterador de TupleStage1 que representan las tuplas con las distancias mas cercanas a cada vecindad
      */
-    def stage1Neighbors(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
+    def stage1Neighbors(neighborhoods: Iterator[Neighborhood], k: Int, distance: Distance, spark: SparkSession): Iterator[TupleStage1] = {
         neighborhoods.flatMap { neighborhood =>
             neighborhood.neighbors.map { neighbor =>
                 var distances =  neighbor.distances
                 neighborhood.neighborsNew.foreach { neighborNew =>
-                    distances = insert(maxDistance(neighbor.values, neighborNew.values, spark), distances, k, spark)
+                    distances = insert(distance.calculate(neighbor.values, neighborNew.values, spark), distances, k, spark)
                 }
                 TupleStage1(neighbor.id, neighbor.values, IA(distances, spark), distances)
             }
@@ -107,12 +80,12 @@ object KNN {
      * @param spark         SparkSession
      * @return Iterador de TupleStage1 que representan las tuplas con las distancias mas cercanas a cada vecindad
      */
-    def stage1NeighborsNew(neighborhoods: Iterator[Neighborhood], k: Int, spark: SparkSession): Iterator[TupleStage1] = {
+    def stage1NeighborsNew(neighborhoods: Iterator[Neighborhood], k: Int, distance: Distance, spark: SparkSession): Iterator[TupleStage1] = {
         neighborhoods.flatMap { neighborhood =>
             neighborhood.neighborsNew.map { neighborNew =>
                 var distances = Array[Double]()
                 neighborhood.neighbors.foreach {x =>
-                    distances = insert(maxDistance(x.values, neighborNew.values, spark), distances, k, spark)
+                    distances = insert(distance.calculate(x.values, neighborNew.values, spark), distances, k, spark)
                 }
                 TupleStage1(neighborNew.id, neighborNew.values, IA(distances, spark), distances)
             }
@@ -153,15 +126,40 @@ object KNN {
     }
 
 
-
     /** IA es una función que determina el índice de anomalía a partir de una vecindad de una instancia. El índice de anomalia no es mas que la suma de todas las distancias de los k vecinos cercanos.
      *
      * @param distances arreglo de Double que representa las distancias de los k vecinos de una instancia a esta
-     * @param spark SparkSession
+     * @param spark     SparkSession
      * @return Retorna un Double que representa el índice de anomalía.
      */
-    def IA(distances: Array[Double], spark: SparkSession): Double = { distances.sum}
+    def IA(distances: Array[Double], spark: SparkSession): Double = {
+        distances.sum
+    }
 
 
+    /**
+     * classify es la función que se encarga de clasificar las Tuplas de la fase 1 según sus distancias
+     *
+     * @param data  es un Dataset de Tupla Stage1 que contiene la base de datos a clasificar
+     * @param spark es el SparkSession de la aplicación
+     * @return Retorna un Dataset de Result que contiene la base de datos clasificada
+     */
+    def classify(data: Dataset[TupleStage1], spark: SparkSession): Dataset[Result] = {
 
+        import spark.implicits._
+        val Stats = data.select("ia").describe().drop("summary").collect().slice(1, 3)
+
+        data.map { x =>
+            var category = ""
+            val value = x.ia
+            val mean = Stats(0).getString(0).toDouble
+            val StDev = Stats(1).getString(0).toDouble
+            if (value > (mean + Configuration.p * StDev))
+                category = "anomaly"
+            else {
+                category = "normal"
+            }
+            Result(x.id, x.ia, x.distances, x.values, category)
+        }
+    }
 }
