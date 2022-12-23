@@ -1,7 +1,7 @@
 import knn.{Algorithm, Configuration}
 import knn.AuxiliaryClass.Result
 import org.apache.spark.sql.{AnalysisException, Column, Dataset, SaveMode, SparkSession}
-import org.apache.spark.sql.functions.{concat, concat_ws, lit}
+import org.apache.spark.sql.functions.{concat, concat_ws, lit, size}
 
 import scala.concurrent.duration.{Duration, NANOSECONDS}
 
@@ -16,8 +16,11 @@ object RunNewAlgorithm {
 
         var df_classified: Dataset[Result] = null
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("db/" + db + ".csv")
-        val splitData = data.randomSplit(Array(0.7, 0.1, 0.1, 0.1), seed = Configuration.seed)
 
+        val x  = (10.0 - Configuration.partitions + 1.0)/10
+        var partitions: Array[Double] = Array(x)
+        partitions = partitions ++ Array.fill(Configuration.partitions - 1)(0.1)
+        val splitData = data.randomSplit(partitions, seed = Configuration.seed)
 
         val dataResult = splitData.map { partition =>
 
