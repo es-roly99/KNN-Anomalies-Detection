@@ -3,28 +3,7 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
-        <entry key="/db/annthyroid.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
         <entry key="/db/bank.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/db/mammography.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/db/satimage.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />
@@ -39,20 +18,6 @@
           </value>
         </entry>
         <entry key="/db/smtp.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/result/satimage_5/part-00000-30592c0e-3f93-4bcc-829c-18ff91fda978-c000.csv">
-          <value>
-            <Attribute>
-              <option name="separator" value="," />
-            </Attribute>
-          </value>
-        </entry>
-        <entry key="/result/satimage_5/part-00000-c3ea22e0-cc84-4aa7-b11e-981a85702660-c000.csv">
           <value>
             <Attribute>
               <option name="separator" value="," />

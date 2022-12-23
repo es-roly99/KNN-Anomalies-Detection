@@ -13,6 +13,7 @@ object RunNewAlgorithm {
         val spark = Configuration.spark
         val db = Configuration.database
         val k = Configuration.k
+        val temporary = Configuration.temporary
 
         var df_classified: Dataset[Result] = null
         val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("db/" + db + ".csv")
@@ -27,7 +28,7 @@ object RunNewAlgorithm {
             val ini_time = System.nanoTime()
 
             try {
-                val trained_data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("result/" + db + "_" + k)
+                val trained_data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv(temporary + "/" + db + "_" + k)
                 df_classified = Algorithm.train(partition, trained_data)
             }
             catch {
@@ -40,13 +41,13 @@ object RunNewAlgorithm {
             df_classified
               .withColumn("values", stringify(df_classified.col("values")))
               .withColumn("distances", stringify(df_classified.col("distances")))
-              .write.mode(SaveMode.Overwrite).option("header", "true").csv("result/" + db + "_" + k)
+              .write.mode(SaveMode.Overwrite).option("header", "true").csv(temporary + "/" + db + "_" + k)
 
 
             def stringify(c: Column) = concat(lit("["), concat_ws(",", c), lit("]"))
 
 
-            val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv("result/" + db + "_" + k)
+            val data = spark.read.options(Map("delimiter" -> ",", "header" -> "true")).csv(temporary + "/" + db + "_" + k)
 
             val metrics = Metrics.confusionMatrix(data, spark)
 

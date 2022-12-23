@@ -18,9 +18,8 @@ object Configuration {
 
     val id: String = "id"
     val database: String = "satimage"
-    val pivotOption: Int = 1
-    val distanceOption: Int = 2
-    val partitions: Int = 5
+    val results: String = "results"
+    val temporary: String = "temporary"
 
     //val seed: Int = 12341234
     //val seed: Int = 83272864
@@ -28,6 +27,9 @@ object Configuration {
 
     val k: Int = 5
     val p: Double = 3
+    val pivotOption: Int = 1
+    val distanceOption: Int = 2
+    val partitions: Int = 5
 
     val spark: SparkSession = SparkSession
       .builder
